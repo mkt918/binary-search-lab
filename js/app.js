@@ -424,11 +424,29 @@
    * ========================================================= */
   (function linear() {
     const N = 8;
-    const st = { key: 0, lin: 0, linDone: false, lo: 0, hi: N - 1, binQ: 0, binDone: false, timer: null };
+    const st = { key: 0, lin: 0, linDone: false, lo: 0, hi: N - 1, binQ: 0, binDone: false, timer: null, scenario: 'plain' };
     const linEls = [], binEls = [];
     const sel = $('lKey');
     sel.append(h('option', { value: 'r', text: 'ランダム（ひみつ）' }));
     for (let i = 0; i < N; i++) sel.append(h('option', { value: i, text: i + '番' }));
+
+    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
+    const LSCEN = {
+      plain: {
+        keyLabel: '鍵の場所', linName: '線形探索（端から開ける）', binName: '二分探索（半分に分ける）',
+        tableHead: '鍵の箱', hint: '',
+        introHTML: '同じ8個の箱を、0番から順番に開けて調べるのが<b>線形探索</b>。同じ場所に鍵をかくして、二分探索と同時にスタートしてみよう。',
+        footNote: '線形探索は「調べた箱の数」で数えます。8個なら最大8回。二分探索は比較質問3回で必ず1つにしぼれます。',
+        found: (key, lin, bin) => '鍵は ' + key + '番。線形探索は ' + lin + ' 回、二分探索は ' + bin + ' 回でした。',
+      },
+      biz: {
+        keyLabel: '商品の場所', linName: '線形探索（端の棚から順に見る）', binName: '二分探索（半分に分ける）',
+        tableHead: '商品がある棚', hint: '商業科の「企業活動の改善」につなげて、倉庫の棚から目的の商品を探す場面として考えます。',
+        introHTML: '同じ8個の棚を、0番から順番に見て調べるのが<b>線形探索</b>。同じ場所に商品を置いて、二分探索と同時にスタートしてみよう。',
+        footNote: '線形探索は「調べた棚の数」で数えます。8個なら最大8回。二分探索は比較質問3回で必ず1つにしぼれます。',
+        found: (key, lin, bin) => '商品は ' + key + '番の棚。線形探索は ' + lin + ' 回、二分探索は ' + bin + ' 回でした。',
+      },
+    };
 
     [['lLinBoxes', linEls], ['lBinBoxes', binEls]].forEach(([id, arr]) => {
       const w = $(id); w.style.setProperty('--n', N);
@@ -456,7 +474,7 @@
       if (st.linDone && st.binDone) {
         clearInterval(st.timer); st.timer = null;
         $('lStart').textContent = 'スタート';
-        $('lMsg').textContent = '鍵は ' + st.key + '番。線形探索は ' + st.lin + ' 回、二分探索は ' + st.binQ + ' 回でした。';
+        $('lMsg').textContent = LSCEN[st.scenario].found(st.key, st.lin, st.binQ);
       }
       render();
     }
@@ -498,6 +516,18 @@
     $('lStart').addEventListener('click', start);
     $('lStep').addEventListener('click', () => { if (st.timer) { clearInterval(st.timer); st.timer = null; $('lStart').textContent = '再開'; } if (!(st.linDone && st.binDone)) step(); });
     $('lReset').addEventListener('click', reset);
+    document.querySelectorAll('[data-lscen]').forEach(b => b.addEventListener('click', () => {
+      st.scenario = b.dataset.lscen; setPressed('[data-lscen]', 'lscen', st.scenario);
+      const sc = LSCEN[st.scenario];
+      $('lKeyLabel').textContent = sc.keyLabel;
+      $('lLinName').textContent = sc.linName;
+      $('lBinName').textContent = sc.binName;
+      $('lTableHeadKey').textContent = sc.tableHead;
+      $('lScenarioHint').textContent = sc.hint;
+      $('linearIntro').innerHTML = sc.introHTML;
+      $('lFootNote').textContent = sc.footNote;
+      reset();
+    }));
     pages.linear = { onShow() {} };
     reset();
   })();
@@ -705,10 +735,22 @@
    * ========================================================= */
   (function sorted() {
     const N = 8;
-    const st = { base: [], order: 'shuffle', arr: [], target: 0, steps: null, idx: 0 };
+    const st = { base: [], order: 'shuffle', arr: [], target: 0, steps: null, idx: 0, scenario: 'plain' };
     const cardEls = [];
     const w = $('oCards');
     for (let i = 0; i < N; i++) { const c = h('div', { class: 'ncard' }); cardEls.push(c); w.append(c); }
+
+    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
+    const OSCEN = {
+      plain: {
+        intro: 'カードに数が書いてあります。真ん中のカードとくらべて「探す数のほうが大きいから右半分へ」と進めるのが二分探索。数がバラバラに並んでいたら、どうなるかな？',
+        targetLabel: '探す数', hint: '', noun: '数 ',
+      },
+      biz: {
+        intro: '商品コードが書かれたカードがあります。真ん中のカードとくらべて「探す商品コードのほうが大きいから右半分へ」と進めるのが二分探索。商品コードがバラバラに並んでいたら、どうなるかな？',
+        targetLabel: '探す商品コード', hint: '商業科の「企業活動の改善」につなげて、商品コードの一覧から目的の商品を探す場面として考えます。', noun: '商品コード ',
+      },
+    };
 
     function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
@@ -754,16 +796,17 @@
         }
         if (done && !st.steps.found && i === trueIdx) c.classList.add('is-missed');
       });
+      const sc = OSCEN[st.scenario];
       const msg = $('oMsg');
       msg.replaceChildren();
       $('oStep').disabled = done;
-      if (!cur) { msg.append(h('p', { class: 'muted', text: '「次の比較」を押すと、真ん中のカードとくらべていきます。探す数 ' + st.target + ' のカードには下に赤い線がついています。' })); return; }
+      if (!cur) { msg.append(h('p', { class: 'muted', text: '「次の比較」を押すと、真ん中のカードとくらべていきます。探す' + sc.noun + st.target + ' のカードには下に赤い線がついています。' })); return; }
       const dir = cur.cmp > 0 ? '大きい → 右側だけ残す' : cur.cmp < 0 ? '小さい → 左側だけ残す' : '同じ！';
-      msg.append(h('p', { style: 'font-weight: 700;', text: st.idx + '回目：真ん中のカードは ' + cur.value + '。探す数 ' + st.target + ' は ' + cur.value + ' より ' + dir }));
+      msg.append(h('p', { style: 'font-weight: 700;', text: st.idx + '回目：真ん中のカードは ' + cur.value + '。探す' + sc.noun + st.target + ' は ' + cur.value + ' より ' + dir }));
       if (done) {
         const b = st.steps.found
           ? h('div', { class: 'banner banner--ok' }, h('strong', { text: '見つかった！ ' }), st.steps.steps.length + '回の比較で見つかりました。')
-          : h('div', { class: 'banner banner--ng' }, h('strong', { text: '見つからない…！ ' }), st.target + ' は本当は左から' + (trueIdx + 1) + '枚目にあったのに、半分を捨てたときにいっしょに捨ててしまいました。',
+          : h('div', { class: 'banner banner--ng' }, h('strong', { text: '見つからない…！ ' }), (st.scenario === 'biz' ? sc.noun : '') + st.target + ' は本当は左から' + (trueIdx + 1) + '枚目にあったのに、半分を捨てたときにいっしょに捨ててしまいました。',
             st.order === 'shuffle' ? h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: '小さい順に並べてやり直す', onclick: () => { st.order = 'sorted'; setPressed('[data-sorder]', 'sorder', 'sorted'); restart(); } })) : null);
         msg.append(b);
       }
@@ -773,6 +816,14 @@
     $('oStep').addEventListener('click', () => { if (st.idx < st.steps.steps.length) { st.idx++; render(); } });
     $('oRestart').addEventListener('click', restart);
     $('oNew').addEventListener('click', newCards);
+    document.querySelectorAll('[data-oscen]').forEach(b => b.addEventListener('click', () => {
+      st.scenario = b.dataset.oscen; setPressed('[data-oscen]', 'oscen', st.scenario);
+      const sc = OSCEN[st.scenario];
+      $('sortedIntro').textContent = sc.intro;
+      $('oTargetLabel').textContent = sc.targetLabel;
+      $('oScenarioHint').textContent = sc.hint;
+      render();
+    }));
     newCards();
   })();
 

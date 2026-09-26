@@ -264,13 +264,13 @@
   <div class="page-head">
     <span class="step-tag">ワークシート 5</span>
     <h2>線形探索とくらべよう</h2>
-    <p>同じ8個の箱を、0番から順番に開けて調べるのが<b>線形探索</b>。同じ場所に鍵をかくして、二分探索と同時にスタートしてみよう。</p>
+    <p id="linearIntro">同じ8個の箱を、0番から順番に開けて調べるのが<b>線形探索</b>。同じ場所に鍵をかくして、二分探索と同時にスタートしてみよう。</p>
   </div>
 
   <div class="grid-2">
     <div class="card">
       <div class="row" style="justify-content: space-between; margin-bottom: var(--space-sm);">
-        <label class="field">鍵の場所
+        <label class="field"><span id="lKeyLabel">鍵の場所</span>
           <select id="lKey"></select>
         </label>
         <div class="row">
@@ -279,13 +279,21 @@
           <button class="btn btn--ghost btn--sm" id="lReset">リセット</button>
         </div>
       </div>
+      <div class="row" style="margin-bottom: var(--space-sm);">
+        <span class="muted">場面：</span>
+        <div class="seg" role="group" aria-label="場面の言い換え">
+          <button type="button" data-lscen="plain" aria-pressed="true">箱のまま</button>
+          <button type="button" data-lscen="biz" aria-pressed="false">企業の場面で</button>
+        </div>
+      </div>
+      <p class="note" id="lScenarioHint"></p>
       <div class="race">
         <div class="race__lane">
-          <div class="race__head"><span class="race__name">線形探索（端から開ける）</span><span class="race__count"><span id="lLinCount">0</span> 回</span></div>
+          <div class="race__head"><span class="race__name" id="lLinName">線形探索（端から開ける）</span><span class="race__count"><span id="lLinCount">0</span> 回</span></div>
           <div class="boxes" id="lLinBoxes"></div>
         </div>
         <div class="race__lane">
-          <div class="race__head"><span class="race__name">二分探索（半分に分ける）</span><span class="race__count"><span id="lBinCount">0</span> 回</span></div>
+          <div class="race__head"><span class="race__name" id="lBinName">二分探索（半分に分ける）</span><span class="race__count"><span id="lBinCount">0</span> 回</span></div>
           <div class="boxes" id="lBinBoxes"></div>
         </div>
       </div>
@@ -296,12 +304,12 @@
       <h3>鍵の場所ごとの回数</h3>
       <div class="table-wrap">
         <table class="log">
-          <thead><tr><th>鍵の箱</th><th class="num">線形探索</th><th class="num">二分探索</th></tr></thead>
+          <thead><tr><th id="lTableHeadKey">鍵の箱</th><th class="num">線形探索</th><th class="num">二分探索</th></tr></thead>
           <tbody id="lTable"></tbody>
           <tfoot id="lFoot"></tfoot>
         </table>
       </div>
-      <p class="note">線形探索は「調べた箱の数」で数えます。8個なら最大8回。二分探索は比較質問3回で必ず1つにしぼれます。</p>
+      <p class="note" id="lFootNote">線形探索は「調べた箱の数」で数えます。8個なら最大8回。二分探索は比較質問3回で必ず1つにしぼれます。</p>
     </div>
   </div>
 </section>
@@ -442,7 +450,7 @@
   <div class="page-head">
     <span class="step-tag">まとめ・次時へ</span>
     <h2>並んでいないと、二分探索は使えない</h2>
-    <p>カードに数が書いてあります。真ん中のカードとくらべて「探す数のほうが大きいから右半分へ」と進めるのが二分探索。数がバラバラに並んでいたら、どうなるかな？</p>
+    <p id="sortedIntro">カードに数が書いてあります。真ん中のカードとくらべて「探す数のほうが大きいから右半分へ」と進めるのが二分探索。数がバラバラに並んでいたら、どうなるかな？</p>
   </div>
 
   <div class="grid-2">
@@ -455,8 +463,16 @@
         <button class="btn btn--sm" id="oNew">新しいカード</button>
       </div>
       <div class="row" style="margin-bottom: var(--space-sm);">
-        <label class="field">探す数 <select id="oTarget"></select></label>
+        <label class="field"><span id="oTargetLabel">探す数</span> <select id="oTarget"></select></label>
       </div>
+      <div class="row" style="margin-bottom: var(--space-sm);">
+        <span class="muted">場面：</span>
+        <div class="seg" role="group" aria-label="場面の言い換え">
+          <button type="button" data-oscen="plain" aria-pressed="true">数字のまま</button>
+          <button type="button" data-oscen="biz" aria-pressed="false">企業の場面で</button>
+        </div>
+      </div>
+      <p class="note" id="oScenarioHint"></p>
       <div class="cards" id="oCards"></div>
       <div class="row" style="margin-top: var(--space-sm);">
         <button class="btn btn--primary" id="oStep">次の比較</button>
