@@ -4,6 +4,8 @@
 「誕生日当てクイズから考える探索の仕組み（二分探索）」をアシストする授業用Webアプリ。
 教員はプロジェクタで投影、生徒はスマホ・タブレットで触る想定。
 
+配布先: <https://mkt918.github.io/binary-search-lab/>
+
 授業設計（ルール・数値・8ステップ）は [docs/26-09-26_二分探索授業_構成まとめ.md](docs/26-09-26_二分探索授業_構成まとめ.md) が正本。
 
 ## 使い方
@@ -57,14 +59,9 @@ node js/tests.js
 
 ## 公開（GitHub Pages）
 
-```bash
-git remote add origin https://github.com/mkt918/<リポジトリ名>.git
-git push -u origin main
-```
-
-GitHub の Settings → Pages で `main` ブランチ `/ (root)` を指定。
+リポジトリ: <https://github.com/mkt918/binary-search-lab>（Pages: `main` ブランチ `/ (root)`）。
+`git push` すれば数分で配布先に反映される。
 
 ## 今後決めること
 
-- 公開URL（GitHub Pages のリポジトリ名）
 - 企業活動の場面への置き換え（社員名簿100人／会員1万人／商品100万件）を 5 の画面に入れるか（docs 6-1 の改善案）
