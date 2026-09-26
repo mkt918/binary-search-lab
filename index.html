@@ -72,7 +72,7 @@
   <div class="page-head">
     <span class="step-tag">ワークシート 1・2・3</span>
     <h2>誕生日当てクイズ</h2>
-    <p>カレンダーの日付をタップすると「その日より後ですか？」の質問になります。質問する前に、候補がどう分かれるか見てみよう。</p>
+    <p id="birthdayIntro">カレンダーの日付をタップすると「その日より後ですか？」の質問になります。質問する前に、候補がどう分かれるか見てみよう。</p>
   </div>
 
   <div class="grid-2">
@@ -94,8 +94,17 @@
           <label class="field">予想 <input type="number" id="bGuess" min="1" max="365" placeholder="?" style="width: 5em">回</label>
         </div>
 
+        <div class="row" style="margin-bottom: var(--space-sm);">
+          <span class="muted">場面：</span>
+          <div class="seg" role="group" aria-label="場面の言い換え">
+            <button type="button" data-bscen="plain" aria-pressed="true">誕生日のまま</button>
+            <button type="button" data-bscen="biz" aria-pressed="false">企業の場面で</button>
+          </div>
+        </div>
+        <p class="note" id="bScenarioHint"></p>
+
         <div class="stats" style="margin-bottom: var(--space-sm);">
-          <div class="stat stat--key"><div class="stat__label">のこりの候補</div><div class="stat__value"><span id="bCount">365</span><small>日</small></div></div>
+          <div class="stat stat--key"><div class="stat__label">のこりの候補</div><div class="stat__value"><span id="bCount">365</span><small id="bCountUnit">日</small></div></div>
           <div class="stat"><div class="stat__label">質問した回数</div><div class="stat__value"><span id="bAsked">0</span><small>回</small></div></div>
           <div class="stat"><div class="stat__label">必ず当てるには あと</div><div class="stat__value"><span id="bLeft">9</span><small>回</small></div></div>
         </div>
@@ -184,7 +193,7 @@
   <div class="page-head">
     <span class="step-tag">ワークシート 4</span>
     <h2>箱の鍵さがし</h2>
-    <p>どれか1つの箱に鍵が入っています。箱をタップして選び、「〇番より後ですか？」と質問しよう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？</p>
+    <p id="boxesIntro">どれか1つの箱に鍵が入っています。箱をタップして選び、「〇番より後ですか？」と質問しよう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？</p>
   </div>
 
   <div class="grid-2">
@@ -198,6 +207,14 @@
           </div>
           <button class="btn btn--sm" id="xNew">新しく鍵をかくす</button>
         </div>
+        <div class="row" style="margin-bottom: var(--space-sm);">
+          <span class="muted">場面：</span>
+          <div class="seg" role="group" aria-label="場面の言い換え">
+            <button type="button" data-xscen="plain" aria-pressed="true">箱のまま</button>
+            <button type="button" data-xscen="biz" aria-pressed="false">企業の場面で</button>
+          </div>
+        </div>
+        <p class="note" id="xScenarioHint"></p>
         <div class="stats" style="margin-bottom: var(--space-sm);">
           <div class="stat stat--key"><div class="stat__label">のこりの候補</div><div class="stat__value"><span id="xCount">8</span><small>個</small></div></div>
           <div class="stat"><div class="stat__label">質問した回数</div><div class="stat__value"><span id="xAsked">0</span><small>回</small></div></div>
@@ -226,10 +243,10 @@
 
     <div class="card">
       <h3>全パターン確認表</h3>
-      <p class="muted">鍵を見つけるたびに、その箱の欄に質問回数が入ります。全部の箱を試してみよう。</p>
+      <p class="muted" id="xTableIntro">鍵を見つけるたびに、その箱の欄に質問回数が入ります。全部の箱を試してみよう。</p>
       <div class="table-wrap" style="margin-top: var(--space-2xs);">
         <table class="log">
-          <thead><tr><th>鍵が入っていた箱</th><th class="num">あなたの回数</th><th class="num">半分ずつなら</th></tr></thead>
+          <thead><tr><th id="xTableHeadKey">鍵が入っていた箱</th><th class="num">あなたの回数</th><th class="num">半分ずつなら</th></tr></thead>
           <tbody id="xTable"></tbody>
         </table>
       </div>

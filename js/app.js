@@ -72,8 +72,22 @@
    * ========================================================= */
   (function birthday() {
     const N = BS.DAYS_IN_YEAR;
-    const st = { mode: 'human', lo: 0, hi: N - 1, q: 0, hist: [], secret: 0, over: null, pending: null };
+    const st = { mode: 'human', lo: 0, hi: N - 1, q: 0, hist: [], secret: 0, over: null, pending: null, scenario: 'plain' };
     const cells = [];
+
+    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
+    const BSCEN = {
+      plain: {
+        unit: '日', noun: '誕生日',
+        intro: 'カレンダーの日付をタップすると「その日より後ですか？」の質問になります。質問する前に、候補がどう分かれるか見てみよう。',
+        hint: '',
+      },
+      biz: {
+        unit: '件', noun: '会員の誕生日',
+        intro: 'カレンダーの日付をタップすると「その日より後ですか？」の質問になります。会員データベースから、誕生日特典を送りたい会員の誕生日を確認する場面だと考えよう。',
+        hint: '商業科の「顧客管理（CRM）」につなげて、会員データベースの中から会員の誕生日を絞りこむ場面として考えます。',
+      },
+    };
 
     // カレンダー
     const cal = $('bCal');
@@ -141,6 +155,8 @@
     }
 
     function render() {
+      const sc = BSCEN[st.scenario];
+      $('bCountUnit').textContent = sc.unit;
       const count = st.hi - st.lo + 1;
       $('bCount').textContent = count;
       $('bAsked').textContent = st.hist.length;
@@ -160,7 +176,7 @@
       // 質問
       const t = BS.dayToDate(st.q);
       selM.value = t.m; fillDays(t.m); selD.value = t.d;
-      renderSplit($('bSplitNo'), $('bSplitYes'), $('bVerdict'), st.lo, st.hi, st.q, '日');
+      renderSplit($('bSplitNo'), $('bSplitYes'), $('bVerdict'), st.lo, st.hi, st.q, sc.unit);
       const canAsk = !st.over && st.pending == null && count > 1;
       ['bYes', 'bNo', 'bAsk', 'bSuggest'].forEach(id => ($(id).disabled = !canAsk));
       $('bAnswerHuman').classList.toggle('hide', st.mode !== 'human');
@@ -172,7 +188,7 @@
       $('bDeclare').disabled = !!st.over || st.pending != null;
       $('bDeclareHint').textContent = count === 1
         ? '候補が1つになりました。自信をもって宣言しよう！'
-        : 'まだ候補が' + count + '日あります。いま宣言すると、選んでいる日付で運まかせの一発勝負！';
+        : 'まだ候補が' + count + sc.unit + 'あります。いま宣言すると、選んでいる日付で運まかせの一発勝負！';
       $('bJudge').classList.toggle('hide', st.pending == null);
 
       const res = $('bResult');
@@ -184,7 +200,7 @@
         if (st.over.hit) b.append(h('strong', { text: '当たり！ ' }), '質問 ' + n + ' 回で当てました。');
         else b.append(h('strong', { text: 'はずれ… ' }), st.mode === 'cpu' ? '正解は ' + BS.dayLabel(st.secret) + ' でした。' : '宣言は1回だけ。');
         if (g) b.append(h('br'), '予想は ' + g + ' 回でした。');
-        b.append(h('br'), '（ちょうど半分ずつなら、どの誕生日でも 9 回以内で必ず当たる）');
+        b.append(h('br'), '（ちょうど半分ずつなら、どの' + sc.noun + 'でも 9 回以内で必ず当たる）');
         res.append(b, h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: '次の人へ（はじめから）', onclick: reset })));
       }
 
@@ -199,7 +215,7 @@
           h('td', { text: BS.dayLabel(s.q) + 'より後？' }),
           h('td', {}, h('span', { class: 'tag ' + (s.isAfter ? 'tag--yes' : 'tag--no'), text: s.isAfter ? 'はい' : 'いいえ' })),
           h('td', { text: r.lo === r.hi ? BS.dayLabel(r.lo) : BS.dayLabel(r.lo) + '〜' + BS.dayLabel(r.hi) }),
-          h('td', { class: 'num', text: (r.hi - r.lo + 1) + '日' })));
+          h('td', { class: 'num', text: (r.hi - r.lo + 1) + sc.unit })));
       });
       renderRecords();
     }
@@ -219,6 +235,13 @@
 
     document.querySelectorAll('[data-bmode]').forEach(b => b.addEventListener('click', () => {
       st.mode = b.dataset.bmode; setPressed('[data-bmode]', 'bmode', st.mode); reset();
+    }));
+    document.querySelectorAll('[data-bscen]').forEach(b => b.addEventListener('click', () => {
+      st.scenario = b.dataset.bscen; setPressed('[data-bscen]', 'bscen', st.scenario);
+      const sc = BSCEN[st.scenario];
+      $('birthdayIntro').textContent = sc.intro;
+      $('bScenarioHint').textContent = sc.hint;
+      render();
     }));
     $('bYes').addEventListener('click', () => answer(true));
     $('bNo').addEventListener('click', () => answer(false));
@@ -242,8 +265,27 @@
   const shared = { lastBox: null }; // 決定木ページへの受け渡し
 
   (function boxes() {
-    const st = { n: 8, key: 0, lo: 0, hi: 7, sel: null, hist: [], over: null, table: {}, showHalf: false };
+    const st = { n: 8, key: 0, lo: 0, hi: 7, sel: null, hist: [], over: null, table: {}, showHalf: false, scenario: 'plain' };
     const boxEls = [];
+
+    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
+    const XSCEN = {
+      plain: {
+        intro: 'どれか1つの箱に鍵が入っています。箱をタップして選び、「〇番より後ですか？」と質問しよう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？',
+        hint: '', newBtn: '新しく鍵をかくす', verdictIdle: '箱をタップして選んでください', declareIdle: 'この箱だと宣言',
+        tableIntro: '鍵を見つけるたびに、その箱の欄に質問回数が入ります。全部の箱を試してみよう。', tableHead: '鍵が入っていた箱',
+        found: n => '質問 ' + n + ' 回で ' + st.key + '番の鍵を見つけました。', missed: () => '鍵は ' + st.key + '番にありました。',
+        again: 'もう一回（鍵をかくし直す）',
+      },
+      biz: {
+        intro: '倉庫の棚のどれか1つに、目的の商品が置かれています。棚をタップして選び、「〇番より後ですか？」と質問しよう。商品がどの棚にあっても、ちょうど半分に分ければ同じ回数で見つかるかな？',
+        hint: '商業科の「企業活動の改善」につなげて、倉庫の棚から目的の商品を探す場面として考えます。',
+        newBtn: '商品を置き直す', verdictIdle: '棚をタップして選んでください', declareIdle: 'この棚だと宣言',
+        tableIntro: '商品を見つけるたびに、その棚の欄に質問回数が入ります。全部の棚を試してみよう。', tableHead: '商品があった棚',
+        found: n => '質問 ' + n + ' 回で ' + st.key + '番の棚から商品を見つけました。', missed: () => '商品は ' + st.key + '番の棚にありました。',
+        again: 'もう一回（商品を置き直す）',
+      },
+    };
 
     function newGame() {
       Object.assign(st, { key: randInt(st.n), lo: 0, hi: st.n - 1, sel: null, hist: [], over: null });
@@ -280,6 +322,7 @@
     }
 
     function render() {
+      const sc = XSCEN[st.scenario];
       const count = st.hi - st.lo + 1;
       $('xCount').textContent = count;
       $('xAsked').textContent = st.hist.length;
@@ -304,20 +347,20 @@
         $('xSplitNo').style.flexGrow = count; $('xSplitYes').style.flexGrow = 0;
         $('xSplitNo').textContent = ''; $('xSplitYes').textContent = '';
         $('xVerdict').className = 'split__verdict';
-        $('xVerdict').textContent = st.over ? '' : count === 1 ? '候補は1つ。宣言しよう！' : '箱をタップして選んでください';
+        $('xVerdict').textContent = st.over ? '' : count === 1 ? '候補は1つ。宣言しよう！' : sc.verdictIdle;
       }
       $('xAsk').disabled = sel == null || !!st.over || count === 1;
       $('xAsk').textContent = sel == null ? '選んだ番号より後ですか？' : sel + '番より後ですか？';
       $('xDeclare').disabled = sel == null || !!st.over;
-      $('xDeclare').textContent = sel == null ? 'この箱だと宣言' : sel + '番だと宣言';
+      $('xDeclare').textContent = sel == null ? sc.declareIdle : sel + '番だと宣言';
 
       const res = $('xResult');
       res.replaceChildren();
       if (st.over) {
         const b = h('div', { class: 'banner ' + (st.over.hit ? 'banner--ok' : 'banner--ng') });
-        if (st.over.hit) b.append(h('strong', { text: '見つけた！ ' }), '質問 ' + st.hist.length + ' 回で ' + st.key + '番の鍵を見つけました。');
-        else b.append(h('strong', { text: 'はずれ… ' }), '鍵は ' + st.key + '番にありました。');
-        res.append(b, h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: 'もう一回（鍵をかくし直す）', onclick: newGame })));
+        if (st.over.hit) b.append(h('strong', { text: '見つけた！ ' }), sc.found(st.hist.length));
+        else b.append(h('strong', { text: 'はずれ… ' }), sc.missed());
+        res.append(b, h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: sc.again, onclick: newGame })));
       }
 
       const log = $('xLog');
@@ -355,6 +398,16 @@
 
     document.querySelectorAll('[data-xn]').forEach(b => b.addEventListener('click', () => {
       st.n = +b.dataset.xn; setPressed('[data-xn]', 'xn', st.n); newGame();
+    }));
+    document.querySelectorAll('[data-xscen]').forEach(b => b.addEventListener('click', () => {
+      st.scenario = b.dataset.xscen; setPressed('[data-xscen]', 'xscen', st.scenario);
+      const sc = XSCEN[st.scenario];
+      $('boxesIntro').textContent = sc.intro;
+      $('xScenarioHint').textContent = sc.hint;
+      $('xNew').textContent = sc.newBtn;
+      $('xTableIntro').textContent = sc.tableIntro;
+      $('xTableHeadKey').textContent = sc.tableHead;
+      render();
     }));
     $('xNew').addEventListener('click', newGame);
     $('xAsk').addEventListener('click', ask);
