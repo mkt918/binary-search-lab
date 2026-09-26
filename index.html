@@ -72,86 +72,72 @@
   <div class="page-head">
     <span class="step-tag">ワークシート 1・2・3</span>
     <h2>誕生日当てクイズ</h2>
-    <p id="birthdayIntro">カレンダーの日付をタップすると「その日より後ですか？」の質問になります。</p>
+    <p id="birthdayIntro">カレンダーの日付をタップ、または指でなぞって質問する日を選ぼう。</p>
   </div>
 
-  <div class="grid-2">
-    <div class="stack">
-      <div class="card">
-        <div class="row" style="justify-content: space-between; margin-bottom: var(--space-sm);">
-          <div class="seg" role="group" aria-label="答える人">
-            <button type="button" data-bmode="human" aria-pressed="true">人が答える</button>
-            <button type="button" data-bmode="cpu" aria-pressed="false">コンピュータが答える</button>
-          </div>
-          <div class="row">
-            <button class="btn btn--ghost btn--sm" id="bUndo">1つ戻す</button>
-            <button class="btn btn--sm" id="bReset">はじめから</button>
-          </div>
-        </div>
-
-        <div class="row" style="margin-bottom: var(--space-sm);">
-          <label class="field">出題者 <input type="text" id="bAsker" placeholder="例：先生／Aさん" size="10"></label>
-          <label class="field">予想 <input type="number" id="bGuess" min="1" max="365" placeholder="?" style="width: 5em">回</label>
-        </div>
-
-        <div class="row" style="margin-bottom: var(--space-sm);">
-          <span class="muted">場面：</span>
-          <div class="seg" role="group" aria-label="場面の言い換え">
-            <button type="button" data-bscen="plain" aria-pressed="true">誕生日のまま</button>
-            <button type="button" data-bscen="biz" aria-pressed="false">企業の場面で</button>
-          </div>
-        </div>
-        <p class="note" id="bScenarioHint"></p>
-
-        <div class="stats" style="margin-bottom: var(--space-sm);">
-          <div class="stat stat--key"><div class="stat__label">のこりの候補</div><div class="stat__value"><span id="bCount">365</span><small id="bCountUnit">日</small></div></div>
-          <div class="stat"><div class="stat__label">質問した回数</div><div class="stat__value"><span id="bAsked">0</span><small>回</small></div></div>
-          <div class="stat"><div class="stat__label">必ず当てるには あと</div><div class="stat__value"><span id="bLeft">9</span><small>回</small></div></div>
-        </div>
-
-        <p class="range-big" id="bRange">1月1日 〜 12月31日</p>
-
-        <div class="cal" id="bCal" aria-label="カレンダー（タップで質問の日付を選ぶ）" style="margin-top: var(--space-sm);"></div>
-        <div class="cal-legend">
-          <span style="--c: var(--color-accent)">のこりの候補（いいえ側）</span>
-          <span style="--c: var(--color-accent-2)">はい側（より後）</span>
-          <span style="--c: var(--color-out)">外れた日</span>
-        </div>
+  <div class="card">
+    <div class="row" style="justify-content: space-between; margin-bottom: var(--space-sm);">
+      <div class="row">
+        <label class="field">出題者 <input type="text" id="bAsker" placeholder="例：先生／Aさん" size="10"></label>
+        <label class="field">予想 <input type="number" id="bGuess" min="1" max="365" placeholder="?" style="width: 5em">回</label>
+      </div>
+      <div class="row">
+        <button class="btn btn--ghost btn--sm" id="bUndo">1つ戻す</button>
+        <button class="btn btn--sm" id="bReset">はじめから</button>
       </div>
     </div>
 
-    <div class="stack">
-      <div class="card" id="bAskCard">
-        <h3>質問をつくる</h3>
-        <div class="question">
-          <select id="bMonth" aria-label="月"></select>
-          <select id="bDay" aria-label="日"></select>
-          <span>より後ですか？</span>
-        </div>
-        <p class="split__verdict" id="bVerdict"></p>
-
-        <div class="row" style="margin-top: var(--space-sm);" id="bAnswerHuman">
-          <button class="btn btn--yes btn--big" id="bYes">はい（より後）</button>
-          <button class="btn btn--no btn--big" id="bNo">いいえ</button>
-        </div>
-        <div class="row hide" style="margin-top: var(--space-sm);" id="bAnswerCpu">
-          <button class="btn btn--primary btn--big" id="bAsk">この質問をする</button>
-        </div>
+    <div class="row" style="margin-bottom: var(--space-sm);">
+      <span class="muted">場面：</span>
+      <div class="seg" role="group" aria-label="場面の言い換え">
+        <button type="button" data-bscen="plain" aria-pressed="true">誕生日のまま</button>
+        <button type="button" data-bscen="biz" aria-pressed="false">企業の場面で</button>
       </div>
+    </div>
+    <p class="note" id="bScenarioHint"></p>
 
-      <div class="card" id="bDeclareCard">
-        <h3>宣言する（1回だけ）</h3>
-        <p class="muted" id="bDeclareHint">候補が1つになったら宣言しよう。まだ候補が多いうちに宣言するのは運まかせ！</p>
-        <div class="row" style="margin-top: var(--space-2xs);">
-          <button class="btn btn--declare btn--big" id="bDeclare">…と宣言</button>
-        </div>
-        <div class="row hide" style="margin-top: var(--space-sm);" id="bJudge">
-          <span class="muted">出題者：当たっていますか？</span>
-          <button class="btn btn--sm" id="bHit">当たり</button>
-          <button class="btn btn--sm" id="bMiss">はずれ</button>
-        </div>
-        <div id="bResult" style="margin-top: var(--space-sm);"></div>
+    <div class="stats" style="margin-bottom: var(--space-sm);">
+      <div class="stat stat--key"><div class="stat__label">のこりの候補</div><div class="stat__value"><span id="bCount">365</span><small id="bCountUnit">日</small></div></div>
+      <div class="stat"><div class="stat__label">質問した回数</div><div class="stat__value"><span id="bAsked">0</span><small>回</small></div></div>
+      <div class="stat"><div class="stat__label">必ず当てるには あと</div><div class="stat__value"><span id="bLeft">9</span><small>回</small></div></div>
+    </div>
+
+    <p class="range-big" id="bRange">1月1日 〜 12月31日</p>
+
+    <div class="cal-wrap">
+      <div class="cal" id="bCal" aria-label="カレンダー（タップまたはドラッグで質問の日付を選ぶ）"></div>
+    </div>
+    <div class="cal-legend">
+      <span style="--c: var(--color-accent)">のこりの候補（いいえ側）</span>
+      <span style="--c: var(--color-accent-2)">はい側（より後）</span>
+      <span style="--c: var(--color-out)">外れた日</span>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top: var(--space-md);">
+    <div class="card" id="bAskCard">
+      <h3>質問をつくる</h3>
+      <p class="question" id="bQuestion"></p>
+      <p class="split__verdict" id="bVerdict"></p>
+
+      <div class="row" style="margin-top: var(--space-sm);">
+        <button class="btn btn--yes btn--big" id="bYes">はい（より後）</button>
+        <button class="btn btn--no btn--big" id="bNo">いいえ</button>
       </div>
+    </div>
+
+    <div class="card" id="bDeclareCard">
+      <h3>宣言する（1回だけ）</h3>
+      <p class="muted" id="bDeclareHint">候補が1つになったら宣言しよう。まだ候補が多いうちに宣言するのは運まかせ！</p>
+      <div class="row" style="margin-top: var(--space-2xs);">
+        <button class="btn btn--declare btn--big" id="bDeclare">…と宣言</button>
+      </div>
+      <div class="row hide" style="margin-top: var(--space-sm);" id="bJudge">
+        <span class="muted">出題者：当たっていますか？</span>
+        <button class="btn btn--sm" id="bHit">当たり</button>
+        <button class="btn btn--sm" id="bMiss">はずれ</button>
+      </div>
+      <div id="bResult" style="margin-top: var(--space-sm);"></div>
     </div>
   </div>
 

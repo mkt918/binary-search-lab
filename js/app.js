@@ -54,19 +54,19 @@
    * ========================================================= */
   (function birthday() {
     const N = BS.DAYS_IN_YEAR;
-    const st = { mode: 'human', lo: 0, hi: N - 1, q: 0, hist: [], secret: 0, over: null, pending: null, scenario: 'plain' };
+    const st = { lo: 0, hi: N - 1, q: 0, hist: [], over: null, pending: null, scenario: 'plain' };
     const cells = [];
 
     // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
     const BSCEN = {
       plain: {
         unit: '日', noun: '誕生日',
-        intro: 'カレンダーの日付をタップすると「その日より後ですか？」の質問になります。',
+        intro: 'カレンダーの日付をタップ、または指でなぞって質問する日を選ぼう。',
         hint: '',
       },
       biz: {
         unit: '件', noun: '会員の誕生日',
-        intro: 'カレンダーの日付をタップすると「その日より後ですか？」の質問になります。会員データベースから、誕生日特典を送りたい会員の誕生日を確認する場面だと考えよう。',
+        intro: 'カレンダーの日付をタップ、または指でなぞって質問する日を選ぼう。会員データベースから、誕生日特典を送りたい会員の誕生日を確認する場面だと考えよう。',
         hint: '商業科の「顧客管理（CRM）」につなげて、会員データベースの中から会員の誕生日を絞りこむ場面として考えます。',
       },
     };
@@ -78,27 +78,41 @@
       for (let d = 1; d <= 31; d++) {
         if (d > BS.MONTH_DAYS[m - 1]) { row.append(h('span', { class: 'cal__d cal__d--none' })); continue; }
         const day = BS.dateToDay(m, d);
-        const b = h('button', { type: 'button', class: 'cal__d', title: m + '月' + d + '日', 'aria-label': m + '月' + d + '日' });
-        b.addEventListener('click', () => { if (!st.over) { st.q = day; render(); } });
+        const b = h('button', { type: 'button', class: 'cal__d', 'data-day': day, title: m + '月' + d + '日', 'aria-label': m + '月' + d + '日', text: String(d) });
         cells[day] = b;
         row.append(b);
       }
       cal.append(row);
     }
-    // 月・日セレクト
-    const selM = $('bMonth'), selD = $('bDay');
-    for (let m = 1; m <= 12; m++) selM.append(h('option', { value: m, text: m + '月' }));
-    function fillDays(m) {
-      selD.replaceChildren();
-      for (let d = 1; d <= BS.MONTH_DAYS[m - 1]; d++) selD.append(h('option', { value: d, text: d + '日' }));
+    // タップ、または指でなぞって（ドラッグ）質問の日を選ぶ
+    let dragging = false;
+    function cellAtPoint(x, y) {
+      const el = document.elementFromPoint(x, y);
+      return el && el.dataset && el.dataset.day != null ? el : null;
     }
-    selM.addEventListener('change', () => { fillDays(+selM.value); st.q = BS.dateToDay(+selM.value, +selD.value); render(); });
-    selD.addEventListener('change', () => { st.q = BS.dateToDay(+selM.value, +selD.value); render(); });
+    function scrollToQ() {
+      const el = cells[st.q];
+      if (el) el.scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+    }
+    function pickCell(el) { if (!st.over) { st.q = +el.dataset.day; render(); } }
+    cal.addEventListener('pointerdown', e => {
+      const el = cellAtPoint(e.clientX, e.clientY);
+      if (!el) return;
+      dragging = true;
+      pickCell(el);
+    });
+    window.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const el = cellAtPoint(e.clientX, e.clientY);
+      if (el) pickCell(el);
+    });
+    window.addEventListener('pointerup', () => { dragging = false; });
 
     function reset() {
-      Object.assign(st, { lo: 0, hi: N - 1, hist: [], over: null, pending: null, secret: randInt(N) });
+      Object.assign(st, { lo: 0, hi: N - 1, hist: [], over: null, pending: null });
       st.q = BS.halfSplit(st.lo, st.hi);
       render();
+      scrollToQ();
     }
 
     function answer(isAfter) {
@@ -107,6 +121,7 @@
       Object.assign(st, BS.applyAnswer(st.lo, st.hi, st.q, isAfter));
       st.q = BS.halfSplit(st.lo, st.hi);
       render();
+      scrollToQ();
     }
 
     const declTarget = () => (st.lo === st.hi ? st.lo : st.q);
@@ -122,9 +137,8 @@
 
     function declare() {
       if (st.over) return;
-      const day = declTarget();
-      if (st.mode === 'cpu') finish(day === st.secret, day);
-      else { st.pending = day; render(); }
+      st.pending = declTarget();
+      render();
     }
 
     function undo() {
@@ -152,16 +166,13 @@
         c.classList.toggle('is-out', !inR);
         c.classList.toggle('is-yesside', inR && !st.over && count > 1 && i > st.q);
         c.classList.toggle('is-q', !st.over && i === st.q && count > 1);
-        c.classList.toggle('is-answer', i === ans || (st.mode === 'cpu' && st.over && i === st.secret));
+        c.classList.toggle('is-answer', i === ans);
       });
 
       // 質問
-      const t = BS.dayToDate(st.q);
-      selM.value = t.m; fillDays(t.m); selD.value = t.d;
       const canAsk = !st.over && st.pending == null && count > 1;
-      ['bYes', 'bNo', 'bAsk'].forEach(id => ($(id).disabled = !canAsk));
-      $('bAnswerHuman').classList.toggle('hide', st.mode !== 'human');
-      $('bAnswerCpu').classList.toggle('hide', st.mode !== 'cpu');
+      $('bQuestion').textContent = BS.dayLabel(st.q) + 'より後ですか？';
+      ['bYes', 'bNo'].forEach(id => ($(id).disabled = !canAsk));
       $('bVerdict').textContent = (!st.over && count === 1) ? '候補は1つ。もう質問はいりません。宣言しよう！' : '';
 
       // 宣言
@@ -179,7 +190,7 @@
         const g = $('bGuess').value;
         const b = h('div', { class: 'banner ' + (st.over.hit ? 'banner--ok' : 'banner--ng') });
         if (st.over.hit) b.append(h('strong', { text: '当たり！ ' }), '質問 ' + n + ' 回で当てました。');
-        else b.append(h('strong', { text: 'はずれ… ' }), st.mode === 'cpu' ? '正解は ' + BS.dayLabel(st.secret) + ' でした。' : '宣言は1回だけ。');
+        else b.append(h('strong', { text: 'はずれ… ' }), '宣言は1回だけ。');
         if (g) b.append(h('br'), '予想は ' + g + ' 回でした。');
         b.append(h('br'), '（ちょうど半分ずつなら、どの' + sc.noun + 'でも 9 回以内で必ず当たる）');
         res.append(b, h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: '次の人へ（はじめから）', onclick: reset })));
@@ -214,9 +225,6 @@
         h('td', {}, h('span', { class: 'tag ' + (r.hit ? 'tag--ok' : 'tag--ng'), text: r.hit ? '当たり' : 'はずれ' })))));
     }
 
-    document.querySelectorAll('[data-bmode]').forEach(b => b.addEventListener('click', () => {
-      st.mode = b.dataset.bmode; setPressed('[data-bmode]', 'bmode', st.mode); reset();
-    }));
     document.querySelectorAll('[data-bscen]').forEach(b => b.addEventListener('click', () => {
       st.scenario = b.dataset.bscen; setPressed('[data-bscen]', 'bscen', st.scenario);
       const sc = BSCEN[st.scenario];
@@ -226,7 +234,6 @@
     }));
     $('bYes').addEventListener('click', () => answer(true));
     $('bNo').addEventListener('click', () => answer(false));
-    $('bAsk').addEventListener('click', () => answer(st.secret > st.q));
     $('bDeclare').addEventListener('click', declare);
     $('bHit').addEventListener('click', () => finish(true, st.pending));
     $('bMiss').addEventListener('click', () => finish(false, st.pending));
