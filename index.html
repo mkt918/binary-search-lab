@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>二分探索ラボ</title>
+<meta name="description" content="誕生日当てクイズと箱の鍵探しで二分探索を体験する授業用ツール">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-header__top">
+    <a class="brand" href="#home"><span class="brand__mark">½</span>二分探索ラボ</a>
+    <div class="header-tools">
+      <button class="btn btn--ghost btn--sm" id="bigToggle" aria-pressed="false" title="プロジェクタ投影用に文字を大きくする">文字 大</button>
+    </div>
+  </div>
+  <nav class="nav" aria-label="授業の流れ">
+    <a href="#home">ホーム</a>
+    <a href="#birthday"><span class="nav__step">1</span>誕生日当て</a>
+    <a href="#boxes"><span class="nav__step">2</span>箱の鍵さがし</a>
+    <a href="#linear"><span class="nav__step">3</span>線形探索と比較</a>
+    <a href="#tree"><span class="nav__step">4</span>決定木</a>
+    <a href="#scale"><span class="nav__step">5</span>n個・大きな数</a>
+    <a href="#sorted"><span class="nav__step">6</span>並びが大事</a>
+    <a href="#summary"><span class="nav__step">7</span>まとめ・豆知識</a>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============ ホーム ============ -->
+<section class="page" id="page-home" data-page="home">
+  <div class="hero">
+    <h1>半分ずつ、<span class="hl">しぼりこむ。</span></h1>
+    <p>誕生日当てクイズから考える、探索のしくみ（二分探索）。</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card card--rule">
+      <h3>今日のルール</h3>
+      <ol class="rules">
+        <li><span>使える質問は「<b>〇より後ですか？</b>」のように、範囲をくらべて「はい／いいえ」で答えられる<b>比較質問</b>だけ。</span></li>
+        <li><span>「答えは〇ですね」という<b>宣言は1回だけ</b>。外れたら失敗。候補が1つにしぼれてから宣言しよう。</span></li>
+        <li><span>宣言は<b>質問回数に数えない</b>（数えるのは比較質問だけ）。</span></li>
+      </ol>
+      <p class="note">※「その日ちょうど」のときは「〇より後ですか？」の答えは「いいえ」。</p>
+    </div>
+
+    <div class="card">
+      <h3>授業の流れ</h3>
+      <ol class="flow">
+        <li><a href="#birthday"><span class="flow__n">1</span><span class="flow__t">誕生日当てクイズ<small>全体 → グループで回数を記録</small></span><span class="flow__time">20分</span></a></li>
+        <li><a href="#boxes"><span class="flow__n">2</span><span class="flow__t">箱（0〜7番）の全パターン<small>どこに鍵があっても3回</small></span><span class="flow__time">8分</span></a></li>
+        <li><a href="#linear"><span class="flow__n">3</span><span class="flow__t">線形探索とくらべる<small>端から開けると最大8回</small></span><span class="flow__time">7分</span></a></li>
+        <li><a href="#tree"><span class="flow__n">4</span><span class="flow__t">決定木で全体を見る<small>質問の枝分かれ図</small></span><span class="flow__time">随時</span></a></li>
+        <li><a href="#scale"><span class="flow__n">5</span><span class="flow__t">n個・100万個だと…？<small>2倍で1回ふえる／log₂n</small></span><span class="flow__time">12分</span></a></li>
+        <li><a href="#sorted"><span class="flow__n">6</span><span class="flow__t">並んでいないと使えない<small>次時「整列」へ</small></span><span class="flow__time">まとめ</span></a></li>
+        <li><a href="#summary"><span class="flow__n">7</span><span class="flow__t">まとめ・豆知識<small>本物のプログラムとの違い</small></span><span class="flow__time">3分</span></a></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 1 誕生日 ============ -->
+<section class="page" id="page-birthday" data-page="birthday">
+  <div class="page-head">
+    <span class="step-tag">ワークシート 1・2・3</span>
+    <h2>誕生日当てクイズ</h2>
+    <p>カレンダーの日付をタップすると「その日より後ですか？」の質問になります。質問する前に、候補がどう分かれるか見てみよう。</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="stack">
+      <div class="card">
+        <div class="row" style="justify-content: space-between; margin-bottom: var(--space-sm);">
+          <div class="seg" role="group" aria-label="答える人">
+            <button type="button" data-bmode="human" aria-pressed="true">人が答える</button>
+            <button type="button" data-bmode="cpu" aria-pressed="false">コンピュータが答える</button>
+          </div>
+          <div class="row">
+            <button class="btn btn--ghost btn--sm" id="bUndo">1つ戻す</button>
+            <button class="btn btn--sm" id="bReset">はじめから</button>
+          </div>
+        </div>
+
+        <div class="row" style="margin-bottom: var(--space-sm);">
+          <label class="field">出題者 <input type="text" id="bAsker" placeholder="例：先生／Aさん" size="10"></label>
+          <label class="field">予想 <input type="number" id="bGuess" min="1" max="365" placeholder="?" style="width: 5em">回</label>
+        </div>
+
+        <div class="stats" style="margin-bottom: var(--space-sm);">
+          <div class="stat stat--key"><div class="stat__label">のこりの候補</div><div class="stat__value"><span id="bCount">365</span><small>日</small></div></div>
+          <div class="stat"><div class="stat__label">質問した回数</div><div class="stat__value"><span id="bAsked">0</span><small>回</small></div></div>
+          <div class="stat"><div class="stat__label">必ず当てるには あと</div><div class="stat__value"><span id="bLeft">9</span><small>回</small></div></div>
+        </div>
+
+        <p class="range-big" id="bRange">1月1日 〜 12月31日</p>
+
+        <div class="cal" id="bCal" aria-label="カレンダー（タップで質問の日付を選ぶ）" style="margin-top: var(--space-sm);"></div>
+        <div class="cal-legend">
+          <span style="--c: var(--color-accent)">のこりの候補（いいえ側）</span>
+          <span style="--c: var(--color-accent-2)">はい側（より後）</span>
+          <span style="--c: var(--color-out)">外れた日</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="card" id="bAskCard">
+        <h3>質問をつくる</h3>
+        <div class="question">
+          <select id="bMonth" aria-label="月"></select>
+          <select id="bDay" aria-label="日"></select>
+          <span>より後ですか？</span>
+        </div>
+        <div class="row" style="margin-top: var(--space-2xs);">
+          <button class="btn btn--sm btn--ghost" id="bSuggest">ちょうど半分の日を提案</button>
+        </div>
+
+        <div class="split" style="margin-top: var(--space-sm);">
+          <div class="split__bar"><div class="split__no" id="bSplitNo"></div><div class="split__yes" id="bSplitYes"></div></div>
+          <p class="split__verdict" id="bVerdict"></p>
+        </div>
+
+        <div class="row" style="margin-top: var(--space-sm);" id="bAnswerHuman">
+          <button class="btn btn--yes btn--big" id="bYes">はい（より後）</button>
+          <button class="btn btn--no btn--big" id="bNo">いいえ</button>
+        </div>
+        <div class="row hide" style="margin-top: var(--space-sm);" id="bAnswerCpu">
+          <button class="btn btn--primary btn--big" id="bAsk">この質問をする</button>
+        </div>
+      </div>
+
+      <div class="card" id="bDeclareCard">
+        <h3>宣言する（1回だけ）</h3>
+        <p class="muted" id="bDeclareHint">候補が1つになったら宣言しよう。まだ候補が多いうちに宣言するのは運まかせ！</p>
+        <div class="row" style="margin-top: var(--space-2xs);">
+          <button class="btn btn--declare btn--big" id="bDeclare">…と宣言</button>
+        </div>
+        <div class="row hide" style="margin-top: var(--space-sm);" id="bJudge">
+          <span class="muted">出題者：当たっていますか？</span>
+          <button class="btn btn--sm" id="bHit">当たり</button>
+          <button class="btn btn--sm" id="bMiss">はずれ</button>
+        </div>
+        <div id="bResult" style="margin-top: var(--space-sm);"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top: var(--space-md);">
+    <div class="card">
+      <h3>質問の記録</h3>
+      <div class="table-wrap">
+        <table class="log">
+          <thead><tr><th class="num">回</th><th>質問した内容</th><th>答え</th><th>しぼりこまれた範囲</th><th class="num">のこり</th></tr></thead>
+          <tbody id="bLog"><tr><td colspan="5" class="muted">まだ質問していません</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content: space-between;">
+        <h3 style="margin: 0;">みんなの記録</h3>
+        <button class="btn btn--ghost btn--sm" id="bClearRecords">記録を消す</button>
+      </div>
+      <p class="muted" style="margin: var(--space-2xs) 0;">宣言が終わるとここに追加されます（この端末だけに保存）。</p>
+      <div class="table-wrap">
+        <table class="log">
+          <thead><tr><th class="num">#</th><th>出題者</th><th class="num">予想</th><th class="num">質問回数</th><th>結果</th></tr></thead>
+          <tbody id="bRecords"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 箱 ============ -->
+<section class="page" id="page-boxes" data-page="boxes">
+  <div class="page-head">
+    <span class="step-tag">ワークシート 4</span>
+    <h2>箱の鍵さがし</h2>
+    <p>どれか1つの箱に鍵が入っています。箱をタップして選び、「〇番より後ですか？」と質問しよう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="stack">
+      <div class="card">
+        <div class="row" style="justify-content: space-between; margin-bottom: var(--space-sm);">
+          <div class="seg" role="group" aria-label="箱の数">
+            <button type="button" data-xn="4" aria-pressed="false">4個</button>
+            <button type="button" data-xn="8" aria-pressed="true">8個</button>
+            <button type="button" data-xn="16" aria-pressed="false">16個</button>
+          </div>
+          <button class="btn btn--sm" id="xNew">新しく鍵をかくす</button>
+        </div>
+        <div class="stats" style="margin-bottom: var(--space-sm);">
+          <div class="stat stat--key"><div class="stat__label">のこりの候補</div><div class="stat__value"><span id="xCount">8</span><small>個</small></div></div>
+          <div class="stat"><div class="stat__label">質問した回数</div><div class="stat__value"><span id="xAsked">0</span><small>回</small></div></div>
+          <div class="stat"><div class="stat__label">必ず当てるには あと</div><div class="stat__value"><span id="xLeft">3</span><small>回</small></div></div>
+        </div>
+        <div class="boxes" id="xBoxes"></div>
+        <div class="split" style="margin-top: var(--space-sm);">
+          <div class="split__bar"><div class="split__no" id="xSplitNo"></div><div class="split__yes" id="xSplitYes"></div></div>
+          <p class="split__verdict" id="xVerdict">箱をタップして選んでください</p>
+        </div>
+        <div class="row" style="margin-top: var(--space-sm);">
+          <button class="btn btn--primary btn--big" id="xAsk" disabled>選んだ番号より後ですか？</button>
+          <button class="btn btn--declare btn--big" id="xDeclare" disabled>この箱だと宣言</button>
+        </div>
+        <div class="row" style="margin-top: var(--space-2xs);">
+          <button class="btn btn--ghost btn--sm" id="xSuggest">ちょうど半分の箱を選ぶ</button>
+          <a class="btn btn--ghost btn--sm" href="#tree" id="xToTree">決定木で道すじを見る →</a>
+        </div>
+        <div id="xResult" style="margin-top: var(--space-sm);"></div>
+      </div>
+      <div class="card">
+        <h3>質問の記録</h3>
+        <ol id="xLog" class="muted" style="margin: 0; padding-left: 1.4em;"><li>まだ質問していません</li></ol>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>全パターン確認表</h3>
+      <p class="muted">鍵を見つけるたびに、その箱の欄に質問回数が入ります。全部の箱を試してみよう。</p>
+      <div class="table-wrap" style="margin-top: var(--space-2xs);">
+        <table class="log">
+          <thead><tr><th>鍵が入っていた箱</th><th class="num">あなたの回数</th><th class="num">半分ずつなら</th></tr></thead>
+          <tbody id="xTable"></tbody>
+        </table>
+      </div>
+      <div class="row" style="margin-top: var(--space-sm);">
+        <button class="btn btn--sm" id="xShowHalf">「半分ずつなら」を表示</button>
+        <button class="btn btn--ghost btn--sm" id="xClearTable">表をリセット</button>
+      </div>
+      <p class="note" id="xTableNote"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 線形 ============ -->
+<section class="page" id="page-linear" data-page="linear">
+  <div class="page-head">
+    <span class="step-tag">ワークシート 5</span>
+    <h2>線形探索とくらべよう</h2>
+    <p>同じ8個の箱を、0番から順番に開けて調べるのが<b>線形探索</b>。同じ場所に鍵をかくして、二分探索と同時にスタートしてみよう。</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="row" style="justify-content: space-between; margin-bottom: var(--space-sm);">
+        <label class="field">鍵の場所
+          <select id="lKey"></select>
+        </label>
+        <div class="row">
+          <button class="btn btn--primary" id="lStart">スタート</button>
+          <button class="btn btn--sm" id="lStep">1手ずつ</button>
+          <button class="btn btn--ghost btn--sm" id="lReset">リセット</button>
+        </div>
+      </div>
+      <div class="race">
+        <div class="race__lane">
+          <div class="race__head"><span class="race__name">線形探索（端から開ける）</span><span class="race__count"><span id="lLinCount">0</span> 回</span></div>
+          <div class="boxes" id="lLinBoxes"></div>
+        </div>
+        <div class="race__lane">
+          <div class="race__head"><span class="race__name">二分探索（半分に分ける）</span><span class="race__count"><span id="lBinCount">0</span> 回</span></div>
+          <div class="boxes" id="lBinBoxes"></div>
+        </div>
+      </div>
+      <p class="note" id="lMsg">スタートを押すと、1秒ごとに1手ずつ進みます。</p>
+    </div>
+
+    <div class="card">
+      <h3>鍵の場所ごとの回数</h3>
+      <div class="table-wrap">
+        <table class="log">
+          <thead><tr><th>鍵の箱</th><th class="num">線形探索</th><th class="num">二分探索</th></tr></thead>
+          <tbody id="lTable"></tbody>
+          <tfoot id="lFoot"></tfoot>
+        </table>
+      </div>
+      <p class="note">線形探索は「調べた箱の数」で数えます。8個なら最大8回。二分探索は比較質問3回で必ず1つにしぼれます。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4 決定木 ============ -->
+<section class="page" id="page-tree" data-page="tree">
+  <div class="page-head">
+    <span class="step-tag">完成図</span>
+    <h2>決定木 ― 質問の枝分かれ図</h2>
+    <p>すべての場合をまとめて1本の木にした図。上から質問に答えていくと、必ず1つの箱にたどりつきます。木の高さ（段の数）＝必ず当てられる質問回数。</p>
+  </div>
+
+  <div class="card" style="margin-bottom: var(--space-md);">
+    <div class="row" style="gap: var(--space-sm);">
+      <label class="field" style="flex: 1 1 220px;">箱の数 <b class="num" id="tNLabel">8</b>個
+        <input type="range" id="tN" min="2" max="16" value="8" style="flex: 1;">
+      </label>
+      <div class="seg" role="group" aria-label="質問のしかた">
+        <button type="button" data-tstrat="half" aria-pressed="true">半分に分ける</button>
+        <button type="button" data-tstrat="edge" aria-pressed="false">端から聞く</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top: var(--space-sm);">
+      <span class="muted">1段ずつ表示：</span>
+      <button class="btn btn--sm" id="tPrev" aria-label="1段もどす">◀</button>
+      <span class="num" id="tLevelLabel" style="min-width: 5em; text-align: center; font-weight: 800;">全部</span>
+      <button class="btn btn--sm" id="tNext" aria-label="1段すすめる">▶</button>
+      <button class="btn btn--ghost btn--sm" id="tAll">全部表示</button>
+      <label class="field" style="margin-left: auto;">道すじ
+        <select id="tKey"></select>
+      </label>
+    </div>
+  </div>
+
+  <div class="tree-wrap" id="tWrap"></div>
+
+  <div class="stats" style="margin-top: var(--space-md);">
+    <div class="stat stat--key"><div class="stat__label">木の高さ（最大の質問回数）</div><div class="stat__value"><span id="tDepth">3</span><small>回</small></div></div>
+    <div class="stat"><div class="stat__label">行き先（葉）の数</div><div class="stat__value"><span id="tLeaves">8</span><small>個</small></div></div>
+    <div class="stat"><div class="stat__label">質問（分かれ道）の数</div><div class="stat__value"><span id="tQs">7</span><small>個</small></div></div>
+  </div>
+  <p class="note" id="tNote"></p>
+</section>
+
+<!-- ============ 5 スケール ============ -->
+<section class="page" id="page-scale" data-page="scale">
+  <div class="page-head">
+    <span class="step-tag">ワークシート 6・7</span>
+    <h2>箱がn個なら？ 100万個なら？</h2>
+    <p>箱の数を変えて、必ず当てられる質問回数を調べよう。2倍になると回数はどう変わる？</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="stack">
+      <div class="card">
+        <div class="row">
+          <label class="field">箱の数 n = <input type="number" id="sN" min="1" max="1000000000" value="8" style="width: 9em;"></label>
+        </div>
+        <input type="range" id="sSlider" min="0" max="1000" value="150" aria-label="箱の数（対数スライダー）">
+        <div class="presets" id="sPresets"></div>
+      </div>
+
+      <div class="readout">
+        <div class="readout__item readout__item--bin">
+          <div class="readout__label">二分探索</div>
+          <div class="readout__value"><span id="sBin">3</span><small>回</small></div>
+          <div class="readout__sub" id="sBinTime"></div>
+        </div>
+        <div class="readout__item readout__item--lin">
+          <div class="readout__label">線形探索（最大）</div>
+          <div class="readout__value"><span id="sLin">8</span><small>回</small></div>
+          <div class="readout__sub" id="sLinTime"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>半分ずつ減っていく様子（いちばん運が悪いとき）</h3>
+        <div class="chain" id="sChain"></div>
+      </div>
+
+      <div class="card">
+        <h3>2の累乗表</h3>
+        <p class="muted">n 以上になる最初の2の累乗を探そう。その「何回かけたか」が質問回数。</p>
+        <div class="pow" id="sPow" style="margin-top: var(--space-2xs);"></div>
+        <div class="logbox" style="margin-top: var(--space-sm);">
+          <b>ログ（log）</b>　「2を何回かけると n になるか」を表す数を <b>log₂n</b>（ログ2のn）と書きます。
+          例：2×2×2＝8 なので log₂8＝3。二分探索の質問回数は log₂n。
+          n が2の累乗でないときは、n を超える最初の2の累乗を探します（数学Ⅱで詳しく学びます）。
+        </div>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <h3 style="margin: 0;">6 箱の数がn個のとき</h3>
+          <button class="btn btn--ghost btn--sm" data-reveal="s6">答えを全部表示</button>
+        </div>
+        <p class="muted" style="margin: var(--space-2xs) 0;">「？」をタップすると答えが出ます。</p>
+        <div class="table-wrap"><table class="log" id="s6"></table></div>
+        <p class="note">箱の数が2倍になると、質問回数は？</p>
+      </div>
+      <div class="card">
+        <div class="row" style="justify-content: space-between;">
+          <h3 style="margin: 0;">7 100個・1万個・100万個だと…？</h3>
+          <button class="btn btn--ghost btn--sm" data-reveal="s7">答えを全部表示</button>
+        </div>
+        <div class="table-wrap" style="margin-top: var(--space-2xs);"><table class="log" id="s7"></table></div>
+        <p class="note">100個 → 100万個（1万倍）になっても、二分探索は 7回 → 20回（約3倍）。</p>
+      </div>
+      <div class="card card--tint">
+        <h3>1回の質問に1秒かかるとしたら</h3>
+        <div class="table-wrap"><table class="log" id="sTime"></table></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6 並び ============ -->
+<section class="page" id="page-sorted" data-page="sorted">
+  <div class="page-head">
+    <span class="step-tag">まとめ・次時へ</span>
+    <h2>並んでいないと、二分探索は使えない</h2>
+    <p>カードに数が書いてあります。真ん中のカードとくらべて「探す数のほうが大きいから右半分へ」と進めるのが二分探索。数がバラバラに並んでいたら、どうなるかな？</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="row" style="justify-content: space-between; margin-bottom: var(--space-sm);">
+        <div class="seg" role="group" aria-label="並び">
+          <button type="button" data-sorder="shuffle" aria-pressed="true">バラバラ</button>
+          <button type="button" data-sorder="sorted" aria-pressed="false">小さい順に並べる</button>
+        </div>
+        <button class="btn btn--sm" id="oNew">新しいカード</button>
+      </div>
+      <div class="row" style="margin-bottom: var(--space-sm);">
+        <label class="field">探す数 <select id="oTarget"></select></label>
+      </div>
+      <div class="cards" id="oCards"></div>
+      <div class="row" style="margin-top: var(--space-sm);">
+        <button class="btn btn--primary" id="oStep">次の比較</button>
+        <button class="btn btn--ghost btn--sm" id="oRestart">最初から</button>
+      </div>
+      <div id="oMsg" style="margin-top: var(--space-sm);"></div>
+    </div>
+
+    <div class="card card--tint">
+      <h3>わかったこと</h3>
+      <ul class="keypoints">
+        <li>二分探索は「真ん中より大きいなら、答えは右側にある」と<b>決めつけて</b>半分を捨てている。</li>
+        <li>その決めつけが正しいのは、データが<b>小さい順（大きい順）に並んでいるとき</b>だけ。</li>
+        <li>誕生日や箱の番号は、もともと順番に並んでいたから二分探索が使えた。</li>
+        <li>バラバラのデータで二分探索を使うには、先に<b>並べ替え（整列）</b>が必要 → 次の時間！</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7 まとめ ============ -->
+<section class="page" id="page-summary" data-page="summary">
+  <div class="page-head">
+    <span class="step-tag">ワークシート 8</span>
+    <h2>まとめ・豆知識</h2>
+  </div>
+
+  <div class="grid-2">
+    <div class="stack">
+      <div class="card">
+        <h3>今日のまとめ</h3>
+        <ul class="keypoints">
+          <li>候補を<b>ちょうど半分</b>にしぼる質問をくり返すのが、いちばん少ない回数で当てる方法（二分探索）。</li>
+          <li>候補が<b>2倍になっても、質問は1回しか増えない</b>。回数は log₂n。</li>
+          <li>100万個でも20回。端から調べる線形探索（最大100万回）とは桁ちがい。</li>
+          <li>ただし使えるのは、データが<b>順番に並んでいるとき</b>だけ。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>豆知識：本物のプログラムの二分探索</h3>
+        <p class="script">実は、本物のプログラムの二分探索は、今日のルールとは少し違って、比較のたびに「これですか？」も一緒に確認しています。だから運がよければ1回で当たることもありますが、逆に今日より多く質問が必要になることもあります。今日は「比較だけをくり返して、最後に1回だけ宣言する」というルールにすることで、質問回数がきれいに log₂n に対応するようにしていました。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>2つの方式をくらべる（箱0〜7番）</h3>
+      <div class="table-wrap">
+        <table class="log">
+          <thead><tr><th>鍵の箱</th><th class="num">今日のルール<br><span class="muted">比較だけ＋最後に宣言</span></th><th class="num">本物のプログラム<br><span class="muted">毎回「これですか？」も確認</span></th></tr></thead>
+          <tbody id="mTable"></tbody>
+          <tfoot id="mFoot"></tfoot>
+        </table>
+      </div>
+      <p class="note">本物のプログラム方式：真ん中の箱と比べて「同じ／前／後」を1回で調べ、同じならその場で終了。</p>
+    </div>
+  </div>
+
+  <h3 style="margin: var(--space-lg) 0 var(--space-xs); font-size: var(--text-lg);">本物のプログラム方式の木（0〜7番）</h3>
+  <div class="tree-wrap" id="mTree"></div>
+  <p class="note">青い丸の箱と比べて、同じならそこで見つかる。一番上の3番は1回、いちばん下の7番は4回かかる。</p>
+</section>
+
+</main>
+
+<script src="js/logic.js"></script>
+<script src="js/tree.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
