@@ -453,34 +453,65 @@
    * 4 決定木
    * ========================================================= */
   (function tree() {
-    const st = { n: 8, strat: 'half', level: Infinity, key: null };
+    const st = { n: 8, strat: 'half', level: Infinity, key: null, scenario: 'plain' };
     const keySel = $('tKey');
 
+    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
+    const SCEN = {
+      plain: {
+        countLabel: '箱の数', countUnit: '個', itemLabel: i => i + '番',
+        intro: 'すべての場合をまとめて1本の木にした図。上から質問に答えていくと、必ず1つの箱にたどりつきます。木の高さ（段の数）＝必ず当てられる質問回数。',
+        leafTapNote: '箱（葉）をタップすると、そこへの道すじが光ります。',
+        terms: {},
+      },
+      biz: {
+        countLabel: '名簿の人数', countUnit: '人', itemLabel: i => i + '番の社員',
+        intro: 'すべての場合をまとめて1本の木にした図。上から質問に答えていくと、必ず1人の社員にたどりつきます。木の高さ（段の数）＝必ず当てられる質問回数。',
+        leafTapNote: '社員（葉）をタップすると、そこへの道すじが光ります。',
+        terms: {
+          question: q => q + '番の社員より後ですか？',
+          leafAria: v => v + '番の社員',
+          countUnit: '人',
+        },
+      },
+    };
+
     function fillKeys() {
+      const sc = SCEN[st.scenario];
       keySel.replaceChildren(h('option', { value: '', text: 'なし' }));
-      for (let i = 0; i < st.n; i++) keySel.append(h('option', { value: i, text: i + '番' }));
+      for (let i = 0; i < st.n; i++) keySel.append(h('option', { value: i, text: sc.itemLabel(i) }));
       keySel.value = st.key == null ? '' : st.key;
     }
     function render() {
+      const sc = SCEN[st.scenario];
       const t = BS.buildDecisionTree(0, st.n - 1, st.strat);
       const depth = BS.treeDepth(t);
       if (st.level > depth) st.level = Infinity;
       const info = BSTree.render($('tWrap'), t, {
-        level: st.level, pathKey: st.key, levelLabels: 'q',
+        level: st.level, pathKey: st.key, levelLabels: 'q', terms: sc.terms,
         onPick: v => { st.key = st.key === v ? null : v; keySel.value = st.key == null ? '' : st.key; render(); },
       });
       $('tNLabel').textContent = st.n;
+      $('tCountLabel').textContent = sc.countLabel;
+      $('tCountUnit').textContent = sc.countUnit;
+      $('treeIntro').textContent = sc.intro;
+      $('tLeavesUnit').textContent = sc.countUnit;
       $('tDepth').textContent = info.maxDepth;
       $('tLeaves').textContent = st.n;
       $('tQs').textContent = st.n - 1;
       $('tLevelLabel').textContent = st.level === Infinity ? '全部' : st.level + '段目まで';
-      const chain = BS.halvingChain(st.n).map(c => c + '個').join(' → ');
+      const chain = BS.halvingChain(st.n).map(c => c + sc.countUnit).join(' → ');
+      const countNoun = st.scenario === 'biz' ? '社員' : '箱';
       $('tNote').textContent = st.strat === 'half'
-        ? '半分ずつ：' + chain + '。どの箱でも最大 ' + depth + ' 回。分かれ道の数はいつも「箱の数−1」（トーナメントの試合数と同じ）。' + (st.key != null ? '　' + st.key + '番への道すじは ' + BS.searchPath(0, st.n - 1, st.key, 'half').length + ' 回。' : '　箱（葉）をタップすると、そこへの道すじが光ります。')
+        ? '半分ずつ：' + chain + '。どの' + countNoun + 'でも最大 ' + depth + ' 回。分かれ道の数はいつも「' + sc.countLabel + '−1」（トーナメントの試合数と同じ）。' + (st.key != null ? '　' + sc.itemLabel(st.key) + 'への道すじは ' + BS.searchPath(0, st.n - 1, st.key, 'half').length + ' 回。' : '　' + sc.leafTapNote)
         : '端から聞くと、木が片側にのびて高くなります。運が悪いと ' + depth + ' 回。これは線形探索と同じ考え方です。';
+      $('tScenarioHint').textContent = st.scenario === 'biz'
+        ? '商業科の「企業活動の改善」につなげて、社員名簿の中から目的の社員をどう絞り込むか考えます。'
+        : '';
     }
     $('tN').addEventListener('input', e => { st.n = +e.target.value; if (st.key != null && st.key >= st.n) st.key = null; st.level = Infinity; fillKeys(); render(); });
     document.querySelectorAll('[data-tstrat]').forEach(b => b.addEventListener('click', () => { st.strat = b.dataset.tstrat; setPressed('[data-tstrat]', 'tstrat', st.strat); st.level = Infinity; render(); }));
+    document.querySelectorAll('[data-tscen]').forEach(b => b.addEventListener('click', () => { st.scenario = b.dataset.tscen; setPressed('[data-tscen]', 'tscen', st.scenario); fillKeys(); render(); }));
     keySel.addEventListener('change', () => { st.key = keySel.value === '' ? null : +keySel.value; render(); });
     const depthNow = () => BS.treeDepth(BS.buildDecisionTree(0, st.n - 1, st.strat));
     $('tPrev').addEventListener('click', () => { const d = depthNow(); st.level = st.level === Infinity ? d - 1 : Math.max(0, st.level - 1); render(); });

@@ -12,25 +12,34 @@
     return e;
   }
 
+  /** 用語セット。opts.terms で上書きすると、箱の言い回しを別の場面（企業活動など）に言い換えられる。 */
+  const DEFAULT_TERMS = {
+    question: q => q + '番より後？',
+    leafAria: v => v + '番',
+    mLabel: v => v + '番？',
+    rangeSuffix: '番',
+    countUnit: '個',
+  };
+
   /** logic の木を描画用の汎用ノードに変換。 */
-  function normalize(node, depth) {
+  function normalize(node, depth, terms) {
     if (!node) return null;
-    if (node.type === 'leaf') return { kind: 'leaf', label: node.value + '番', value: node.value, lo: node.lo, hi: node.hi, depth, kids: [] };
+    if (node.type === 'leaf') return { kind: 'leaf', label: terms.leafAria(node.value), value: node.value, lo: node.lo, hi: node.hi, depth, kids: [] };
     if (node.type === 'q') {
       return {
-        kind: 'q', label: node.q + '番より後？', lo: node.lo, hi: node.hi, depth,
+        kind: 'q', label: terms.question(node.q), lo: node.lo, hi: node.hi, depth,
         kids: [
-          { edge: 'いいえ', side: 'no', node: normalize(node.no, depth + 1) },
-          { edge: 'はい', side: 'yes', node: normalize(node.yes, depth + 1) },
+          { edge: 'いいえ', side: 'no', node: normalize(node.no, depth + 1, terms) },
+          { edge: 'はい', side: 'yes', node: normalize(node.yes, depth + 1, terms) },
         ],
       };
     }
     // 'm'：一致確認あり方式（二分探索木）
     const kids = [];
-    const l = normalize(node.left, depth + 1), r = normalize(node.right, depth + 1);
+    const l = normalize(node.left, depth + 1, terms), r = normalize(node.right, depth + 1, terms);
     if (l) kids.push({ edge: '前', side: 'L', node: l });
     if (r) kids.push({ edge: '後', side: 'R', node: r });
-    return { kind: 'm', label: node.value + '番？', value: node.value, lo: node.lo, hi: node.hi, depth, kids, inorder: true };
+    return { kind: 'm', label: terms.mLabel(node.value), value: node.value, lo: node.lo, hi: node.hi, depth, kids, inorder: true };
   }
 
   function layout(root) {
@@ -64,8 +73,9 @@
    */
   function render(container, tree, opts) {
     opts = opts || {};
+    const terms = Object.assign({}, DEFAULT_TERMS, opts.terms);
     const level = opts.level == null ? Infinity : opts.level;
-    const root = normalize(tree, 0);
+    const root = normalize(tree, 0, terms);
     const { all, width, maxDepth } = layout(root);
     const W = MARGIN_L + width * UNIT_X + PAD_R;
     const H = MARGIN_T + (maxDepth + 1) * LEVEL_H;
@@ -90,10 +100,10 @@
       else if (isQuestionLevel && d < level) {
         t1 = (d + 1) + '回目';
         const maxC = Math.max(...atD.map(n => n.hi - n.lo + 1));
-        t2 = '候補' + maxC + '個';
+        t2 = '候補' + maxC + terms.countUnit;
       } else if (d === level && isQuestionLevel) {
         t1 = 'のこり';
-        t2 = '最大' + Math.max(...atD.map(n => n.hi - n.lo + 1)) + '個';
+        t2 = '最大' + Math.max(...atD.map(n => n.hi - n.lo + 1)) + terms.countUnit;
       } else { t1 = '宣言'; }
       gLevels.appendChild(el('text', { class: 't-level', x: 10, y: y - 2 }, t1));
       if (t2) gLevels.appendChild(el('text', { class: 't-level', x: 10, y: y + 14 }, t2));
@@ -128,8 +138,8 @@
       if (n.depth === level && n.kind === 'q') {
         g = el('g', { class: 't-node t-range' });
         g.appendChild(el('rect', { x: x - 42, y: y - 20, width: 84, height: 40, rx: 10 }));
-        g.appendChild(el('text', { x, y: y - 3, 'text-anchor': 'middle' }, n.lo + '〜' + n.hi + '番'));
-        g.appendChild(el('text', { x, y: y + 13, 'text-anchor': 'middle' }, (n.hi - n.lo + 1) + '個'));
+        g.appendChild(el('text', { x, y: y - 3, 'text-anchor': 'middle' }, n.lo + '〜' + n.hi + terms.rangeSuffix));
+        g.appendChild(el('text', { x, y: y + 13, 'text-anchor': 'middle' }, (n.hi - n.lo + 1) + terms.countUnit));
       } else if (n.kind === 'q') {
         g = el('g', { class: 't-node t-q' + (path ? ' is-path' : '') });
         g.appendChild(el('rect', { x: x - 48, y: y - 17, width: 96, height: 34, rx: 17 }));

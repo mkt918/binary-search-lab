@@ -294,12 +294,12 @@
   <div class="page-head">
     <span class="step-tag">完成図</span>
     <h2>決定木 ― 質問の枝分かれ図</h2>
-    <p>すべての場合をまとめて1本の木にした図。上から質問に答えていくと、必ず1つの箱にたどりつきます。木の高さ（段の数）＝必ず当てられる質問回数。</p>
+    <p id="treeIntro">すべての場合をまとめて1本の木にした図。上から質問に答えていくと、必ず1つの箱にたどりつきます。木の高さ（段の数）＝必ず当てられる質問回数。</p>
   </div>
 
   <div class="card" style="margin-bottom: var(--space-md);">
     <div class="row" style="gap: var(--space-sm);">
-      <label class="field" style="flex: 1 1 220px;">箱の数 <b class="num" id="tNLabel">8</b>個
+      <label class="field" style="flex: 1 1 220px;"><span id="tCountLabel">箱の数</span> <b class="num" id="tNLabel">8</b><span id="tCountUnit">個</span>
         <input type="range" id="tN" min="2" max="16" value="8" style="flex: 1;">
       </label>
       <div class="seg" role="group" aria-label="質問のしかた">
@@ -317,13 +317,21 @@
         <select id="tKey"></select>
       </label>
     </div>
+    <div class="row" style="margin-top: var(--space-sm);">
+      <span class="muted">場面：</span>
+      <div class="seg" role="group" aria-label="場面の言い換え">
+        <button type="button" data-tscen="plain" aria-pressed="true">数字のまま</button>
+        <button type="button" data-tscen="biz" aria-pressed="false">企業の場面で</button>
+      </div>
+    </div>
+    <p class="note" id="tScenarioHint"></p>
   </div>
 
   <div class="tree-wrap" id="tWrap"></div>
 
   <div class="stats" style="margin-top: var(--space-md);">
     <div class="stat stat--key"><div class="stat__label">木の高さ（最大の質問回数）</div><div class="stat__value"><span id="tDepth">3</span><small>回</small></div></div>
-    <div class="stat"><div class="stat__label">行き先（葉）の数</div><div class="stat__value"><span id="tLeaves">8</span><small>個</small></div></div>
+    <div class="stat"><div class="stat__label" id="tLeavesLabel">行き先（葉）の数</div><div class="stat__value"><span id="tLeaves">8</span><small id="tLeavesUnit">個</small></div></div>
     <div class="stat"><div class="stat__label">質問（分かれ道）の数</div><div class="stat__value"><span id="tQs">7</span><small>個</small></div></div>
   </div>
   <p class="note" id="tNote"></p>
