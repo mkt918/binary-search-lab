@@ -54,22 +54,8 @@
    * ========================================================= */
   (function birthday() {
     const N = BS.DAYS_IN_YEAR;
-    const st = { lo: 0, hi: N - 1, q: 0, hist: [], over: null, pending: null, scenario: 'plain' };
+    const st = { out: new Array(N).fill(false), selA: null, selB: null, hist: [], over: null, pending: null };
     const cells = [];
-
-    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
-    const BSCEN = {
-      plain: {
-        unit: '日', noun: '誕生日',
-        intro: 'カレンダーの日付をタップ、または指でなぞって質問する日を選ぼう。',
-        hint: '',
-      },
-      biz: {
-        unit: '件', noun: '会員の誕生日',
-        intro: 'カレンダーの日付をタップ、または指でなぞって質問する日を選ぼう。会員データベースから、誕生日特典を送りたい会員の誕生日を確認する場面だと考えよう。',
-        hint: '商業科の「顧客管理（CRM）」につなげて、会員データベースの中から会員の誕生日を絞りこむ場面として考えます。',
-      },
-    };
 
     // カレンダー
     const cal = $('bCal');
@@ -84,47 +70,55 @@
       }
       cal.append(row);
     }
-    // タップ、または指でなぞって（ドラッグ）質問の日を選ぶ
-    let dragging = false;
+    // タップ、または指でなぞって（ドラッグ）範囲を選ぶ
+    let dragging = false, dragAnchor = null;
     function cellAtPoint(x, y) {
       const el = document.elementFromPoint(x, y);
       return el && el.dataset && el.dataset.day != null ? el : null;
     }
-    function scrollToQ() {
-      const el = cells[st.q];
-      if (el) el.scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
-    }
-    function pickCell(el) { if (!st.over) { st.q = +el.dataset.day; render(); } }
+    function setSelection(a, b) { if (st.over) return; st.selA = Math.min(a, b); st.selB = Math.max(a, b); render(); }
     cal.addEventListener('pointerdown', e => {
       const el = cellAtPoint(e.clientX, e.clientY);
       if (!el) return;
+      dragAnchor = +el.dataset.day;
       dragging = true;
-      pickCell(el);
+      setSelection(dragAnchor, dragAnchor);
     });
     window.addEventListener('pointermove', e => {
       if (!dragging) return;
       const el = cellAtPoint(e.clientX, e.clientY);
-      if (el) pickCell(el);
+      if (el) setSelection(dragAnchor, +el.dataset.day);
     });
     window.addEventListener('pointerup', () => { dragging = false; });
 
+    function remainingCount() { let c = 0; for (let i = 0; i < N; i++) if (!st.out[i]) c++; return c; }
+    function remainingEnvelope() {
+      let min = null, max = null, count = 0;
+      for (let i = 0; i < N; i++) if (!st.out[i]) { if (min == null) min = i; max = i; count++; }
+      return { min, max, count, contiguous: min != null && (max - min + 1 === count) };
+    }
+
     function reset() {
-      Object.assign(st, { lo: 0, hi: N - 1, hist: [], over: null, pending: null });
-      st.q = BS.halfSplit(st.lo, st.hi);
+      st.out = new Array(N).fill(false);
+      Object.assign(st, { selA: null, selB: null, hist: [], over: null, pending: null });
       render();
-      scrollToQ();
     }
 
-    function answer(isAfter) {
-      if (st.over || st.pending != null) return;
-      st.hist.push({ lo: st.lo, hi: st.hi, q: st.q, isAfter });
-      Object.assign(st, BS.applyAnswer(st.lo, st.hi, st.q, isAfter));
-      st.q = BS.halfSplit(st.lo, st.hi);
+    function erase() {
+      if (st.over || st.selA == null) return;
+      const days = [];
+      for (let i = st.selA; i <= st.selB; i++) if (!st.out[i]) { st.out[i] = true; days.push(i); }
+      if (!days.length) return;
+      st.hist.push({ a: st.selA, b: st.selB, days, remainingAfter: remainingCount() });
+      st.selA = st.selB = null;
       render();
-      scrollToQ();
     }
 
-    const declTarget = () => (st.lo === st.hi ? st.lo : st.q);
+    const declTarget = () => {
+      const env = remainingEnvelope();
+      if (env.count === 1) return env.min;
+      return (st.selA != null && st.selA === st.selB) ? st.selA : null;
+    };
 
     function finish(hit, day) {
       st.over = { hit, day };
@@ -137,7 +131,9 @@
 
     function declare() {
       if (st.over) return;
-      st.pending = declTarget();
+      const day = declTarget();
+      if (day == null) return;
+      st.pending = day;
       render();
     }
 
@@ -146,41 +142,44 @@
         st.over = null;
         const recs = store.get('bs.records', []); recs.pop(); store.set('bs.records', recs);
       } else if (st.pending != null) st.pending = null;
-      else if (st.hist.length) { const last = st.hist.pop(); Object.assign(st, { lo: last.lo, hi: last.hi, q: last.q }); }
+      else if (st.hist.length) { const last = st.hist.pop(); last.days.forEach(d => { st.out[d] = false; }); }
       render();
     }
 
     function render() {
-      const sc = BSCEN[st.scenario];
-      $('bCountUnit').textContent = sc.unit;
-      const count = st.hi - st.lo + 1;
-      $('bCount').textContent = count;
+      const env = remainingEnvelope();
+      $('bCount').textContent = env.count;
       $('bAsked').textContent = st.hist.length;
-      $('bLeft').textContent = BS.questionsNeeded(count);
-      $('bRange').textContent = count === 1 ? BS.dayLabel(st.lo) + ' にしぼれた！' : BS.dayLabel(st.lo) + ' 〜 ' + BS.dayLabel(st.hi);
+      $('bRange').textContent = env.count === 0 ? '候補がありません'
+        : env.count === 1 ? BS.dayLabel(env.min) + ' にしぼれた！'
+        : env.contiguous ? BS.dayLabel(env.min) + ' 〜 ' + BS.dayLabel(env.max)
+        : env.count + '日（' + BS.dayLabel(env.min) + '〜' + BS.dayLabel(env.max) + 'の間にとびとび）';
 
       // カレンダー色
       const ans = st.over ? st.over.day : null;
+      let selRemain = 0;
       cells.forEach((c, i) => {
-        const inR = i >= st.lo && i <= st.hi;
-        c.classList.toggle('is-out', !inR);
-        c.classList.toggle('is-yesside', inR && !st.over && count > 1 && i > st.q);
-        c.classList.toggle('is-q', !st.over && i === st.q && count > 1);
+        const inSel = !st.over && st.selA != null && i >= st.selA && i <= st.selB;
+        if (inSel && !st.out[i]) selRemain++;
+        c.classList.toggle('is-out', st.out[i]);
+        c.classList.toggle('is-sel', inSel);
         c.classList.toggle('is-answer', i === ans);
       });
 
-      // 質問
-      const canAsk = !st.over && st.pending == null && count > 1;
-      $('bQuestion').textContent = BS.dayLabel(st.q) + 'より後ですか？';
-      ['bYes', 'bNo'].forEach(id => ($(id).disabled = !canAsk));
-      $('bVerdict').textContent = (!st.over && count === 1) ? '候補は1つ。もう質問はいりません。宣言しよう！' : '';
+      // 選択・消す
+      $('bVerdict').textContent = st.selA == null ? 'カレンダーをタップ、またはドラッグして消したい範囲を選ぼう。'
+        : st.selA === st.selB ? BS.dayLabel(st.selA) + 'を選択中'
+        : BS.dayLabel(st.selA) + ' 〜 ' + BS.dayLabel(st.selB) + '（' + (st.selB - st.selA + 1) + '日）を選択中';
+      $('bErase').disabled = !!st.over || selRemain === 0 || (env.count - selRemain) < 1;
+      $('bClearSel').disabled = !!st.over || st.selA == null;
 
       // 宣言
-      $('bDeclare').textContent = '「' + BS.dayLabel(declTarget()) + '」と宣言';
-      $('bDeclare').disabled = !!st.over || st.pending != null;
-      $('bDeclareHint').textContent = count === 1
+      const dt = declTarget();
+      $('bDeclare').textContent = dt != null ? '「' + BS.dayLabel(dt) + '」と宣言' : '…と宣言';
+      $('bDeclare').disabled = !!st.over || st.pending != null || dt == null;
+      $('bDeclareHint').textContent = env.count === 1
         ? '候補が1つになりました。自信をもって宣言しよう！'
-        : 'まだ候補が' + count + sc.unit + 'あります。いま宣言すると、選んでいる日付で運まかせの一発勝負！';
+        : 'まだ候補が' + env.count + '日あります。宣言するなら1日だけ選んで（運まかせの一発勝負！）';
       $('bJudge').classList.toggle('hide', st.pending == null);
 
       const res = $('bResult');
@@ -189,25 +188,23 @@
         const n = st.hist.length;
         const g = $('bGuess').value;
         const b = h('div', { class: 'banner ' + (st.over.hit ? 'banner--ok' : 'banner--ng') });
-        if (st.over.hit) b.append(h('strong', { text: '当たり！ ' }), '質問 ' + n + ' 回で当てました。');
+        if (st.over.hit) b.append(h('strong', { text: '当たり！ ' }), '消した回数 ' + n + ' 回で当てました。');
         else b.append(h('strong', { text: 'はずれ… ' }), '宣言は1回だけ。');
         if (g) b.append(h('br'), '予想は ' + g + ' 回でした。');
-        b.append(h('br'), '（ちょうど半分ずつなら、どの' + sc.noun + 'でも 9 回以内で必ず当たる）');
+        b.append(h('br'), '（ちょうど半分ずつ消せば、どの誕生日でも 9 回以内で必ず当たる）');
         res.append(b, h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: '次の人へ（はじめから）', onclick: reset })));
       }
 
       // 記録
       const log = $('bLog');
       log.replaceChildren();
-      if (!st.hist.length) log.append(h('tr', {}, h('td', { colspan: 5, class: 'muted', text: 'まだ質問していません' })));
+      if (!st.hist.length) log.append(h('tr', {}, h('td', { colspan: 3, class: 'muted', text: 'まだ消していません' })));
       st.hist.forEach((s, i) => {
-        const r = BS.applyAnswer(s.lo, s.hi, s.q, s.isAfter);
+        const label = s.a === s.b ? BS.dayLabel(s.a) : BS.dayLabel(s.a) + '〜' + BS.dayLabel(s.b);
         log.append(h('tr', {},
           h('td', { class: 'num', text: i + 1 }),
-          h('td', { text: BS.dayLabel(s.q) + 'より後？' }),
-          h('td', {}, h('span', { class: 'tag ' + (s.isAfter ? 'tag--yes' : 'tag--no'), text: s.isAfter ? 'はい' : 'いいえ' })),
-          h('td', { text: r.lo === r.hi ? BS.dayLabel(r.lo) : BS.dayLabel(r.lo) + '〜' + BS.dayLabel(r.hi) }),
-          h('td', { class: 'num', text: (r.hi - r.lo + 1) + sc.unit })));
+          h('td', { text: label + '（' + s.days.length + '日）' }),
+          h('td', { class: 'num', text: s.remainingAfter + '日' })));
       });
       renderRecords();
     }
@@ -225,15 +222,8 @@
         h('td', {}, h('span', { class: 'tag ' + (r.hit ? 'tag--ok' : 'tag--ng'), text: r.hit ? '当たり' : 'はずれ' })))));
     }
 
-    document.querySelectorAll('[data-bscen]').forEach(b => b.addEventListener('click', () => {
-      st.scenario = b.dataset.bscen; setPressed('[data-bscen]', 'bscen', st.scenario);
-      const sc = BSCEN[st.scenario];
-      $('birthdayIntro').textContent = sc.intro;
-      $('bScenarioHint').textContent = sc.hint;
-      render();
-    }));
-    $('bYes').addEventListener('click', () => answer(true));
-    $('bNo').addEventListener('click', () => answer(false));
+    $('bErase').addEventListener('click', erase);
+    $('bClearSel').addEventListener('click', () => { st.selA = st.selB = null; render(); });
     $('bDeclare').addEventListener('click', declare);
     $('bHit').addEventListener('click', () => finish(true, st.pending));
     $('bMiss').addEventListener('click', () => finish(false, st.pending));
@@ -252,27 +242,8 @@
   const shared = { lastBox: null }; // 決定木ページへの受け渡し
 
   (function boxes() {
-    const st = { n: 8, key: 0, lo: 0, hi: 7, sel: null, hist: [], over: null, table: {}, scenario: 'plain' };
+    const st = { n: 8, key: 0, lo: 0, hi: 7, sel: null, hist: [], over: null, table: {} };
     const boxEls = [];
-
-    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
-    const XSCEN = {
-      plain: {
-        intro: 'どれか1つの箱に鍵が入っています。箱をタップして選び、「〇番より後ですか？」と質問しよう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？',
-        hint: '', newBtn: '新しく鍵をかくす', verdictIdle: '箱をタップして選んでください', declareIdle: 'この箱だと宣言',
-        tableIntro: '鍵を見つけるたびに、その箱の欄に質問回数が入ります。全部の箱を試してみよう。', tableHead: '鍵が入っていた箱',
-        found: n => '質問 ' + n + ' 回で ' + st.key + '番の鍵を見つけました。', missed: () => '鍵は ' + st.key + '番にありました。',
-        again: 'もう一回（鍵をかくし直す）',
-      },
-      biz: {
-        intro: '倉庫の棚のどれか1つに、目的の商品が置かれています。棚をタップして選び、「〇番より後ですか？」と質問しよう。商品がどの棚にあっても、ちょうど半分に分ければ同じ回数で見つかるかな？',
-        hint: '商業科の「企業活動の改善」につなげて、倉庫の棚から目的の商品を探す場面として考えます。',
-        newBtn: '商品を置き直す', verdictIdle: '棚をタップして選んでください', declareIdle: 'この棚だと宣言',
-        tableIntro: '商品を見つけるたびに、その棚の欄に質問回数が入ります。全部の棚を試してみよう。', tableHead: '商品があった棚',
-        found: n => '質問 ' + n + ' 回で ' + st.key + '番の棚から商品を見つけました。', missed: () => '商品は ' + st.key + '番の棚にありました。',
-        again: 'もう一回（商品を置き直す）',
-      },
-    };
 
     function newGame() {
       Object.assign(st, { key: randInt(st.n), lo: 0, hi: st.n - 1, sel: null, hist: [], over: null });
@@ -291,11 +262,14 @@
       if (!st.table[st.n]) st.table[st.n] = {};
     }
 
-    function ask() {
+    function ask(dir) {
       if (st.sel == null || st.over) return;
-      const isAfter = st.key > st.sel;
-      st.hist.push({ lo: st.lo, hi: st.hi, q: st.sel, isAfter });
-      Object.assign(st, BS.applyAnswer(st.lo, st.hi, st.sel, isAfter));
+      const sel = st.sel;
+      const q = dir === 'before' ? sel - 1 : sel;
+      const isAfterQ = st.key > q;
+      const answeredYes = dir === 'before' ? !isAfterQ : isAfterQ;
+      st.hist.push({ lo: st.lo, hi: st.hi, q, isAfterQ, sel, dir, answeredYes });
+      Object.assign(st, BS.applyAnswer(st.lo, st.hi, q, isAfterQ));
       st.sel = st.lo === st.hi ? st.lo : null;
       render();
     }
@@ -309,11 +283,9 @@
     }
 
     function render() {
-      const sc = XSCEN[st.scenario];
       const count = st.hi - st.lo + 1;
       $('xCount').textContent = count;
       $('xAsked').textContent = st.hist.length;
-      $('xLeft').textContent = BS.questionsNeeded(count);
       boxEls.forEach((b, i) => {
         b.className = 'box';
         const inR = i >= st.lo && i <= st.hi;
@@ -329,27 +301,30 @@
       });
 
       const sel = st.sel;
-      $('xVerdict').textContent = st.over ? '' : count === 1 ? '候補は1つ。宣言しよう！' : sel == null ? sc.verdictIdle : '';
+      $('xVerdict').textContent = st.over ? '' : count === 1 ? '候補は1つ。宣言しよう！' : sel == null ? '箱をタップして選んでください' : '';
+      $('xAskBefore').disabled = sel == null || !!st.over || count === 1;
+      $('xAskBefore').textContent = sel == null ? '選んだ番号より前ですか？' : sel + '番より前ですか？';
       $('xAsk').disabled = sel == null || !!st.over || count === 1;
       $('xAsk').textContent = sel == null ? '選んだ番号より後ですか？' : sel + '番より後ですか？';
       $('xDeclare').disabled = sel == null || !!st.over;
-      $('xDeclare').textContent = sel == null ? sc.declareIdle : sel + '番だと宣言';
+      $('xDeclare').textContent = sel == null ? 'この箱だと宣言' : sel + '番だと宣言';
 
       const res = $('xResult');
       res.replaceChildren();
       if (st.over) {
         const b = h('div', { class: 'banner ' + (st.over.hit ? 'banner--ok' : 'banner--ng') });
-        if (st.over.hit) b.append(h('strong', { text: '見つけた！ ' }), sc.found(st.hist.length));
-        else b.append(h('strong', { text: 'はずれ… ' }), sc.missed());
-        res.append(b, h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: sc.again, onclick: newGame })));
+        if (st.over.hit) b.append(h('strong', { text: '見つけた！ ' }), '質問 ' + st.hist.length + ' 回で ' + st.key + '番の鍵を見つけました。');
+        else b.append(h('strong', { text: 'はずれ… ' }), '鍵は ' + st.key + '番にありました。');
+        res.append(b, h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: 'もう一回（鍵をかくし直す）', onclick: newGame })));
       }
 
       const log = $('xLog');
       log.replaceChildren();
       if (!st.hist.length) log.append(h('li', { text: 'まだ質問していません' }));
       st.hist.forEach(s => {
-        const r = BS.applyAnswer(s.lo, s.hi, s.q, s.isAfter);
-        log.append(h('li', {}, s.q + '番より後？ → ', h('span', { class: 'tag ' + (s.isAfter ? 'tag--yes' : 'tag--no'), text: s.isAfter ? 'はい' : 'いいえ' }),
+        const r = BS.applyAnswer(s.lo, s.hi, s.q, s.isAfterQ);
+        const qLabel = s.sel + (s.dir === 'before' ? '番より前？' : '番より後？');
+        log.append(h('li', {}, qLabel + ' → ', h('span', { class: 'tag ' + (s.answeredYes ? 'tag--yes' : 'tag--no'), text: s.answeredYes ? 'はい' : 'いいえ' }),
           '　のこり ' + (r.lo === r.hi ? r.lo + '番' : r.lo + '〜' + r.hi + '番') + '（' + (r.hi - r.lo + 1) + '個）'));
       });
       renderTable();
@@ -378,18 +353,9 @@
     document.querySelectorAll('[data-xn]').forEach(b => b.addEventListener('click', () => {
       st.n = +b.dataset.xn; setPressed('[data-xn]', 'xn', st.n); newGame();
     }));
-    document.querySelectorAll('[data-xscen]').forEach(b => b.addEventListener('click', () => {
-      st.scenario = b.dataset.xscen; setPressed('[data-xscen]', 'xscen', st.scenario);
-      const sc = XSCEN[st.scenario];
-      $('boxesIntro').textContent = sc.intro;
-      $('xScenarioHint').textContent = sc.hint;
-      $('xNew').textContent = sc.newBtn;
-      $('xTableIntro').textContent = sc.tableIntro;
-      $('xTableHeadKey').textContent = sc.tableHead;
-      render();
-    }));
     $('xNew').addEventListener('click', newGame);
-    $('xAsk').addEventListener('click', ask);
+    $('xAskBefore').addEventListener('click', () => ask('before'));
+    $('xAsk').addEventListener('click', () => ask('after'));
     $('xDeclare').addEventListener('click', declare);
     $('xClearTable').addEventListener('click', () => { st.table[st.n] = {}; renderTable(); });
     $('xToTree').addEventListener('click', () => { shared.toTree = { n: st.n, key: st.over ? st.key : null }; });
@@ -401,29 +367,11 @@
    * ========================================================= */
   (function linear() {
     const N = 8;
-    const st = { key: 0, lin: 0, linDone: false, lo: 0, hi: N - 1, binQ: 0, binDone: false, timer: null, scenario: 'plain' };
+    const st = { key: 0, lin: 0, linDone: false, lo: 0, hi: N - 1, binQ: 0, binDone: false, timer: null };
     const linEls = [], binEls = [];
     const sel = $('lKey');
     sel.append(h('option', { value: 'r', text: 'ランダム（ひみつ）' }));
     for (let i = 0; i < N; i++) sel.append(h('option', { value: i, text: i + '番' }));
-
-    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
-    const LSCEN = {
-      plain: {
-        keyLabel: '鍵の場所', linName: '線形探索（端から開ける）', binName: '二分探索（半分に分ける）',
-        tableHead: '鍵の箱', hint: '',
-        introHTML: '同じ8個の箱を、0番から順番に開けて調べるのが<b>線形探索</b>。同じ場所に鍵をかくして、二分探索と同時にスタートしてみよう。',
-        footNote: '線形探索は「調べた箱の数」で数えます。8個なら最大8回。二分探索は比較質問3回で必ず1つにしぼれます。',
-        found: (key, lin, bin) => '鍵は ' + key + '番。線形探索は ' + lin + ' 回、二分探索は ' + bin + ' 回でした。',
-      },
-      biz: {
-        keyLabel: '商品の場所', linName: '線形探索（端の棚から順に見る）', binName: '二分探索（半分に分ける）',
-        tableHead: '商品がある棚', hint: '商業科の「企業活動の改善」につなげて、倉庫の棚から目的の商品を探す場面として考えます。',
-        introHTML: '同じ8個の棚を、0番から順番に見て調べるのが<b>線形探索</b>。同じ場所に商品を置いて、二分探索と同時にスタートしてみよう。',
-        footNote: '線形探索は「調べた棚の数」で数えます。8個なら最大8回。二分探索は比較質問3回で必ず1つにしぼれます。',
-        found: (key, lin, bin) => '商品は ' + key + '番の棚。線形探索は ' + lin + ' 回、二分探索は ' + bin + ' 回でした。',
-      },
-    };
 
     [['lLinBoxes', linEls], ['lBinBoxes', binEls]].forEach(([id, arr]) => {
       const w = $(id); w.style.setProperty('--n', N);
@@ -451,7 +399,7 @@
       if (st.linDone && st.binDone) {
         clearInterval(st.timer); st.timer = null;
         $('lStart').textContent = 'スタート';
-        $('lMsg').textContent = LSCEN[st.scenario].found(st.key, st.lin, st.binQ);
+        $('lMsg').textContent = '鍵は ' + st.key + '番。線形探索は ' + st.lin + ' 回、二分探索は ' + st.binQ + ' 回でした。';
       }
       render();
     }
@@ -493,18 +441,6 @@
     $('lStart').addEventListener('click', start);
     $('lStep').addEventListener('click', () => { if (st.timer) { clearInterval(st.timer); st.timer = null; $('lStart').textContent = '再開'; } if (!(st.linDone && st.binDone)) step(); });
     $('lReset').addEventListener('click', reset);
-    document.querySelectorAll('[data-lscen]').forEach(b => b.addEventListener('click', () => {
-      st.scenario = b.dataset.lscen; setPressed('[data-lscen]', 'lscen', st.scenario);
-      const sc = LSCEN[st.scenario];
-      $('lKeyLabel').textContent = sc.keyLabel;
-      $('lLinName').textContent = sc.linName;
-      $('lBinName').textContent = sc.binName;
-      $('lTableHeadKey').textContent = sc.tableHead;
-      $('lScenarioHint').textContent = sc.hint;
-      $('linearIntro').innerHTML = sc.introHTML;
-      $('lFootNote').textContent = sc.footNote;
-      reset();
-    }));
     pages.linear = { onShow() {} };
     reset();
   })();
@@ -513,65 +449,38 @@
    * 4 決定木
    * ========================================================= */
   (function tree() {
-    const st = { n: 8, strat: 'half', level: Infinity, key: null, scenario: 'plain' };
+    const st = { n: 8, strat: 'half', level: 0, key: null };
     const keySel = $('tKey');
 
-    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
-    const SCEN = {
-      plain: {
-        countLabel: '箱の数', countUnit: '個', itemLabel: i => i + '番',
-        intro: 'すべての場合をまとめて1本の木にした図。上から質問に答えていくと、必ず1つの箱にたどりつきます。木の高さ（段の数）＝必ず当てられる質問回数。',
-        leafTapNote: '箱（葉）をタップすると、そこへの道すじが光ります。',
-        terms: {},
-      },
-      biz: {
-        countLabel: '名簿の人数', countUnit: '人', itemLabel: i => i + '番の社員',
-        intro: 'すべての場合をまとめて1本の木にした図。上から質問に答えていくと、必ず1人の社員にたどりつきます。木の高さ（段の数）＝必ず当てられる質問回数。',
-        leafTapNote: '社員（葉）をタップすると、そこへの道すじが光ります。',
-        terms: {
-          question: q => q + '番の社員より後ですか？',
-          leafAria: v => v + '番の社員',
-          countUnit: '人',
-        },
-      },
-    };
-
     function fillKeys() {
-      const sc = SCEN[st.scenario];
       keySel.replaceChildren(h('option', { value: '', text: 'なし' }));
-      for (let i = 0; i < st.n; i++) keySel.append(h('option', { value: i, text: sc.itemLabel(i) }));
+      for (let i = 0; i < st.n; i++) keySel.append(h('option', { value: i, text: i + '番' }));
       keySel.value = st.key == null ? '' : st.key;
     }
     function render() {
-      const sc = SCEN[st.scenario];
       const t = BS.buildDecisionTree(0, st.n - 1, st.strat);
       const depth = BS.treeDepth(t);
-      if (st.level > depth) st.level = Infinity;
+      if (st.level > depth) st.level = 0;
       const info = BSTree.render($('tWrap'), t, {
-        level: st.level, pathKey: st.key, levelLabels: 'q', terms: sc.terms,
+        level: st.level, pathKey: st.key, levelLabels: 'q', terms: {},
         onPick: v => { st.key = st.key === v ? null : v; keySel.value = st.key == null ? '' : st.key; render(); },
       });
       $('tNLabel').textContent = st.n;
-      $('tCountLabel').textContent = sc.countLabel;
-      $('tCountUnit').textContent = sc.countUnit;
-      $('treeIntro').textContent = sc.intro;
-      $('tLeavesUnit').textContent = sc.countUnit;
+      $('tCountLabel').textContent = '箱の数';
+      $('tCountUnit').textContent = '個';
+      $('treeIntro').textContent = 'すべての場合をまとめて1本の木にした図。上から質問に答えていくと、必ず1つの箱にたどりつきます。木の高さ（段の数）＝必ず当てられる質問回数。';
+      $('tLeavesUnit').textContent = '個';
       $('tDepth').textContent = info.maxDepth;
       $('tLeaves').textContent = st.n;
       $('tQs').textContent = st.n - 1;
       $('tLevelLabel').textContent = st.level === Infinity ? '全部' : st.level + '段目まで';
-      const chain = BS.halvingChain(st.n).map(c => c + sc.countUnit).join(' → ');
-      const countNoun = st.scenario === 'biz' ? '社員' : '箱';
+      const chain = BS.halvingChain(st.n).map(c => c + '個').join(' → ');
       $('tNote').textContent = st.strat === 'half'
-        ? '半分ずつ：' + chain + '。どの' + countNoun + 'でも最大 ' + depth + ' 回。分かれ道の数はいつも「' + sc.countLabel + '−1」（トーナメントの試合数と同じ）。' + (st.key != null ? '　' + sc.itemLabel(st.key) + 'への道すじは ' + BS.searchPath(0, st.n - 1, st.key, 'half').length + ' 回。' : '　' + sc.leafTapNote)
+        ? '半分ずつ：' + chain + '。どの箱でも最大 ' + depth + ' 回。分かれ道の数はいつも「箱の数−1」（トーナメントの試合数と同じ）。' + (st.key != null ? '　' + st.key + '番への道すじは ' + BS.searchPath(0, st.n - 1, st.key, 'half').length + ' 回。' : '　箱（葉）をタップすると、そこへの道すじが光ります。')
         : '端から聞くと、木が片側にのびて高くなります。運が悪いと ' + depth + ' 回。これは線形探索と同じ考え方です。';
-      $('tScenarioHint').textContent = st.scenario === 'biz'
-        ? '商業科の「企業活動の改善」につなげて、社員名簿の中から目的の社員をどう絞り込むか考えます。'
-        : '';
     }
-    $('tN').addEventListener('input', e => { st.n = +e.target.value; if (st.key != null && st.key >= st.n) st.key = null; st.level = Infinity; fillKeys(); render(); });
-    document.querySelectorAll('[data-tstrat]').forEach(b => b.addEventListener('click', () => { st.strat = b.dataset.tstrat; setPressed('[data-tstrat]', 'tstrat', st.strat); st.level = Infinity; render(); }));
-    document.querySelectorAll('[data-tscen]').forEach(b => b.addEventListener('click', () => { st.scenario = b.dataset.tscen; setPressed('[data-tscen]', 'tscen', st.scenario); fillKeys(); render(); }));
+    $('tN').addEventListener('input', e => { st.n = +e.target.value; if (st.key != null && st.key >= st.n) st.key = null; st.level = 0; fillKeys(); render(); });
+    document.querySelectorAll('[data-tstrat]').forEach(b => b.addEventListener('click', () => { st.strat = b.dataset.tstrat; setPressed('[data-tstrat]', 'tstrat', st.strat); st.level = 0; render(); }));
     keySel.addEventListener('change', () => { st.key = keySel.value === '' ? null : +keySel.value; render(); });
     const depthNow = () => BS.treeDepth(BS.buildDecisionTree(0, st.n - 1, st.strat));
     $('tPrev').addEventListener('click', () => { const d = depthNow(); st.level = st.level === Infinity ? d - 1 : Math.max(0, st.level - 1); render(); });
@@ -581,7 +490,7 @@
     pages.tree = {
       onShow() {
         if (shared.toTree) {
-          st.n = shared.toTree.n; st.key = shared.toTree.key; st.strat = 'half'; st.level = Infinity;
+          st.n = shared.toTree.n; st.key = shared.toTree.key; st.strat = 'half'; st.level = 0;
           $('tN').value = st.n; setPressed('[data-tstrat]', 'tstrat', 'half');
           shared.toTree = null;
         }
@@ -596,28 +505,22 @@
    * ========================================================= */
   (function scale() {
     const MAXLOG = 6; // スライダーは 1〜100万
-    const st = { n: 8, scenario: 'plain' };
+    const st = { n: 8 };
 
-    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
     const presetDefs = [
       { v: 2, plain: '2' },
       { v: 4, plain: '4' },
       { v: 8, plain: '8' },
       { v: 16, plain: '16' },
       { v: 32, plain: '32' },
-      { v: 100, plain: '100', biz: '社員100人' },
+      { v: 100, plain: '100' },
       { v: 365, plain: '365（誕生日）' },
-      { v: 10000, plain: '1万', biz: '顧客1万人' },
-      { v: 1000000, plain: '100万', biz: '商品100万件' },
+      { v: 10000, plain: '1万' },
+      { v: 1000000, plain: '100万' },
     ];
-    const bizFull = { 100: '社員100人の名簿', 10000: '顧客1万人の会員番号', 1000000: '商品100万件の商品コード' };
-    const presetLabel = d => (st.scenario === 'biz' && d.biz) ? d.biz : d.plain;
-    const presetBtns = presetDefs.map(d => {
-      const b = h('button', { class: 'btn btn--sm', type: 'button', text: presetLabel(d), onclick: () => set(d.v, true) });
-      $('sPresets').append(b);
-      return { d, b };
+    presetDefs.forEach(d => {
+      $('sPresets').append(h('button', { class: 'btn btn--sm', type: 'button', text: d.plain, onclick: () => set(d.v, true) }));
     });
-    function refreshPresetLabels() { presetBtns.forEach(({ d, b }) => { b.textContent = presetLabel(d); }); }
 
     const pow = $('sPow');
     const powEls = [];
@@ -650,22 +553,11 @@
         c.classList.toggle('is-hit', isHit);
         c.classList.toggle('is-under', p < n);
       });
-      const note = $('sScenarioNote');
-      if (st.scenario === 'biz' && bizFull[n]) note.textContent = '（' + bizFull[n] + 'から探しているとして）';
-      else note.textContent = '';
     }
 
     $('sN').addEventListener('input', e => set(+e.target.value || 1, false));
     $('sN').addEventListener('change', e => set(+e.target.value || 1, true));
     $('sSlider').addEventListener('input', e => { const n = Math.round(10 ** (+e.target.value / 1000 * MAXLOG)); $('sN').value = n; set(n, false); });
-    document.querySelectorAll('[data-scen]').forEach(b => b.addEventListener('click', () => {
-      st.scenario = b.dataset.scen; setPressed('[data-scen]', 'scen', st.scenario);
-      refreshPresetLabels(); renderS7();
-      $('sScenarioHint').textContent = st.scenario === 'biz'
-        ? '商業科の「企業活動の改善」につなげて、社員名簿・顧客の会員番号・商品コードで探索を考えます。'
-        : '';
-      set(st.n, false);
-    }));
 
     // ワークシートの表（タップで答え）
     const ans = v => h('td', { class: 'ans num' }, h('button', { type: 'button', 'aria-label': '答えを表示', 'data-v': v, onclick: e => { e.currentTarget.classList.add('is-shown'); e.currentTarget.textContent = v; } }));
@@ -675,22 +567,19 @@
     s6.append(h('tbody', {}, h('tr', {}, h('th', { text: '必要な質問回数' }), ...ns6.map(n => ans(BS.questionsNeeded(n) + '回')))));
     const s7 = $('s7');
     const ns7Defs = [
-      { v: 100, plain: '100個', biz: '社員100人\n（名簿）' },
-      { v: 10000, plain: '1万個', biz: '顧客1万人\n（会員番号）' },
-      { v: 1000000, plain: '100万個', biz: '商品100万件\n（商品コード）' },
+      { v: 100, plain: '100個' },
+      { v: 10000, plain: '1万個' },
+      { v: 1000000, plain: '100万個' },
       { v: 365, plain: '365個（誕生日）' },
     ];
-    const s7Label = d => (st.scenario === 'biz' && d.biz) ? d.biz : d.plain;
     function renderS7() {
       s7.replaceChildren();
       s7.append(h('thead', {}, h('tr', {}, h('th', { text: '' }),
-        ...ns7Defs.map(d => h('th', { class: 'num', style: 'white-space: pre-line;', text: s7Label(d) })))));
+        ...ns7Defs.map(d => h('th', { class: 'num', style: 'white-space: pre-line;', text: d.plain })))));
       s7.append(h('tbody', {},
         h('tr', {}, h('th', { text: '線形探索（最大）' }), ...ns7Defs.map(d => ans(BS.formatNum(d.v) + '回'))),
         h('tr', {}, h('th', { text: '二分探索' }), ...ns7Defs.map(d => ans(BS.questionsNeeded(d.v) + '回')))));
-      $('s7Note').textContent = st.scenario === 'biz'
-        ? '社員100人の名簿 → 商品100万件の商品コード（1万倍）になっても、二分探索は 7回 → 20回（約3倍）。'
-        : '100個 → 100万個（1万倍）になっても、二分探索は 7回 → 20回（約3倍）。';
+      $('s7Note').textContent = '100個 → 100万個（1万倍）になっても、二分探索は 7回 → 20回（約3倍）。';
     }
     renderS7();
     document.querySelectorAll('[data-reveal]').forEach(b => b.addEventListener('click', () => {
@@ -712,22 +601,10 @@
    * ========================================================= */
   (function sorted() {
     const N = 8;
-    const st = { base: [], order: 'shuffle', arr: [], target: 0, steps: null, idx: 0, scenario: 'plain' };
+    const st = { base: [], order: 'shuffle', arr: [], target: 0, steps: null, idx: 0 };
     const cardEls = [];
     const w = $('oCards');
     for (let i = 0; i < N; i++) { const c = h('div', { class: 'ncard' }); cardEls.push(c); w.append(c); }
-
-    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
-    const OSCEN = {
-      plain: {
-        intro: 'カードに数が書いてあります。真ん中のカードとくらべて「探す数のほうが大きいから右半分へ」と進めるのが二分探索。数がバラバラに並んでいたら、どうなるかな？',
-        targetLabel: '探す数', hint: '', noun: '数 ',
-      },
-      biz: {
-        intro: '商品コードが書かれたカードがあります。真ん中のカードとくらべて「探す商品コードのほうが大きいから右半分へ」と進めるのが二分探索。商品コードがバラバラに並んでいたら、どうなるかな？',
-        targetLabel: '探す商品コード', hint: '商業科の「企業活動の改善」につなげて、商品コードの一覧から目的の商品を探す場面として考えます。', noun: '商品コード ',
-      },
-    };
 
     function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
@@ -773,17 +650,16 @@
         }
         if (done && !st.steps.found && i === trueIdx) c.classList.add('is-missed');
       });
-      const sc = OSCEN[st.scenario];
       const msg = $('oMsg');
       msg.replaceChildren();
       $('oStep').disabled = done;
-      if (!cur) { msg.append(h('p', { class: 'muted', text: '「次の比較」を押すと、真ん中のカードとくらべていきます。探す' + sc.noun + st.target + ' のカードには下に赤い線がついています。' })); return; }
+      if (!cur) { msg.append(h('p', { class: 'muted', text: '「次の比較」を押すと、真ん中のカードとくらべていきます。探す数 ' + st.target + ' のカードには下に赤い線がついています。' })); return; }
       const dir = cur.cmp > 0 ? '大きい → 右側だけ残す' : cur.cmp < 0 ? '小さい → 左側だけ残す' : '同じ！';
-      msg.append(h('p', { style: 'font-weight: 700;', text: st.idx + '回目：真ん中のカードは ' + cur.value + '。探す' + sc.noun + st.target + ' は ' + cur.value + ' より ' + dir }));
+      msg.append(h('p', { style: 'font-weight: 700;', text: st.idx + '回目：真ん中のカードは ' + cur.value + '。探す数 ' + st.target + ' は ' + cur.value + ' より ' + dir }));
       if (done) {
         const b = st.steps.found
           ? h('div', { class: 'banner banner--ok' }, h('strong', { text: '見つかった！ ' }), st.steps.steps.length + '回の比較で見つかりました。')
-          : h('div', { class: 'banner banner--ng' }, h('strong', { text: '見つからない…！ ' }), (st.scenario === 'biz' ? sc.noun : '') + st.target + ' は本当は左から' + (trueIdx + 1) + '枚目にあったのに、半分を捨てたときにいっしょに捨ててしまいました。',
+          : h('div', { class: 'banner banner--ng' }, h('strong', { text: '見つからない…！ ' }), st.target + ' は本当は左から' + (trueIdx + 1) + '枚目にあったのに、半分を捨てたときにいっしょに捨ててしまいました。',
             st.order === 'shuffle' ? h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: '小さい順に並べてやり直す', onclick: () => { st.order = 'sorted'; setPressed('[data-sorder]', 'sorder', 'sorted'); restart(); } })) : null);
         msg.append(b);
       }
@@ -793,14 +669,6 @@
     $('oStep').addEventListener('click', () => { if (st.idx < st.steps.steps.length) { st.idx++; render(); } });
     $('oRestart').addEventListener('click', restart);
     $('oNew').addEventListener('click', newCards);
-    document.querySelectorAll('[data-oscen]').forEach(b => b.addEventListener('click', () => {
-      st.scenario = b.dataset.oscen; setPressed('[data-oscen]', 'oscen', st.scenario);
-      const sc = OSCEN[st.scenario];
-      $('sortedIntro').textContent = sc.intro;
-      $('oTargetLabel').textContent = sc.targetLabel;
-      $('oScenarioHint').textContent = sc.hint;
-      render();
-    }));
     newCards();
   })();
 

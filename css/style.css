@@ -121,8 +121,6 @@ main { max-width: 1180px; margin: 0 auto; padding: var(--space-md) var(--space-s
 .btn--primary { background: var(--color-accent); color: var(--color-accent-ink); box-shadow: 0 3px 0 var(--color-accent-deep); }
 .btn--primary:hover { background: var(--color-accent-hover); }
 .btn--primary:active { box-shadow: 0 1px 0 var(--color-accent-deep); transform: translateY(2px); }
-.btn--yes { background: var(--color-accent-2); color: var(--color-accent-2-ink); box-shadow: 0 3px 0 var(--color-accent-2-deep); }
-.btn--yes:hover { background: var(--color-accent-2-deep); }
 .btn--no { background: var(--color-ink-2); color: var(--color-paper); box-shadow: 0 3px 0 var(--color-ink); }
 .btn--no:hover { background: var(--color-ink); }
 .btn--declare { background: var(--color-accent-3); color: var(--color-accent-3-ink); box-shadow: 0 3px 0 var(--color-accent-3-deep); }
@@ -214,19 +212,18 @@ table.log tr.is-max td { background: var(--color-accent-wash); }
 /* ---------- birthday calendar ---------- */
 
 .cal-wrap { overflow-x: auto; margin-top: var(--space-sm); touch-action: pan-y; }
-.cal { display: grid; gap: 4px; width: max-content; }
-.cal__row { display: grid; grid-template-columns: 3em repeat(31, minmax(36px, 1fr)); gap: 3px; align-items: center; }
+.cal { display: grid; gap: 4px; }
+.cal__row { display: grid; grid-template-columns: 3em repeat(31, minmax(28px, 1fr)); gap: 3px; align-items: center; }
 .cal__m { font-size: var(--text-xs); font-weight: 700; color: var(--color-ink-2); text-align: right; padding-right: 4px; }
 .cal__d {
-  aspect-ratio: 1; min-width: 36px; border: 0; padding: 0; border-radius: var(--radius-cell);
+  aspect-ratio: 1; min-width: 28px; border: 0; padding: 0; border-radius: var(--radius-cell);
   background: var(--color-accent); cursor: pointer; touch-action: pan-y;
   display: grid; place-items: center;
   font-family: var(--font-num); font-size: var(--text-xs); font-weight: 700; color: var(--color-accent-ink);
   transition: background var(--dur-med) var(--ease-out), transform var(--dur-short) var(--ease-out);
 }
 .cal__d.is-out { background: var(--color-out); color: var(--color-out-ink); }
-.cal__d.is-yesside { background: var(--color-accent-2); color: var(--color-accent-2-ink); }
-.cal__d.is-q { outline: 3px solid var(--color-accent-3-deep); outline-offset: 1px; z-index: 1; transform: scale(1.12); }
+.cal__d.is-sel { background: var(--color-accent-2); color: var(--color-accent-2-ink); outline: 2px solid var(--color-accent-2-deep); outline-offset: 1px; z-index: 1; }
 .cal__d.is-answer { background: var(--color-accent-3); color: var(--color-accent-3-ink); }
 .cal__d:hover { transform: scale(1.12); }
 .cal__d--none { visibility: hidden; pointer-events: none; }
@@ -234,9 +231,6 @@ table.log tr.is-max td { background: var(--color-accent-wash); }
 .cal-legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; background: var(--c); }
 
 .range-big { font-family: var(--font-display); font-weight: 800; font-size: var(--text-xl); }
-.question {
-  font-size: var(--text-lg); font-weight: 800;
-}
 
 /* ---------- boxes ---------- */
 
