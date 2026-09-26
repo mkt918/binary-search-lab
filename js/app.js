@@ -505,9 +505,28 @@
    * ========================================================= */
   (function scale() {
     const MAXLOG = 6; // スライダーは 1〜100万
-    const st = { n: 8 };
-    const presets = [[2, '2'], [4, '4'], [8, '8'], [16, '16'], [32, '32'], [100, '100'], [365, '365（誕生日）'], [10000, '1万'], [1000000, '100万']];
-    presets.forEach(([v, label]) => $('sPresets').append(h('button', { class: 'btn btn--sm', type: 'button', text: label, onclick: () => set(v, true) })));
+    const st = { n: 8, scenario: 'plain' };
+
+    // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
+    const presetDefs = [
+      { v: 2, plain: '2' },
+      { v: 4, plain: '4' },
+      { v: 8, plain: '8' },
+      { v: 16, plain: '16' },
+      { v: 32, plain: '32' },
+      { v: 100, plain: '100', biz: '社員100人' },
+      { v: 365, plain: '365（誕生日）' },
+      { v: 10000, plain: '1万', biz: '顧客1万人' },
+      { v: 1000000, plain: '100万', biz: '商品100万件' },
+    ];
+    const bizFull = { 100: '社員100人の名簿', 10000: '顧客1万人の会員番号', 1000000: '商品100万件の商品コード' };
+    const presetLabel = d => (st.scenario === 'biz' && d.biz) ? d.biz : d.plain;
+    const presetBtns = presetDefs.map(d => {
+      const b = h('button', { class: 'btn btn--sm', type: 'button', text: presetLabel(d), onclick: () => set(d.v, true) });
+      $('sPresets').append(b);
+      return { d, b };
+    });
+    function refreshPresetLabels() { presetBtns.forEach(({ d, b }) => { b.textContent = presetLabel(d); }); }
 
     const pow = $('sPow');
     const powEls = [];
@@ -540,11 +559,22 @@
         c.classList.toggle('is-hit', isHit);
         c.classList.toggle('is-under', p < n);
       });
+      const note = $('sScenarioNote');
+      if (st.scenario === 'biz' && bizFull[n]) note.textContent = '（' + bizFull[n] + 'から探しているとして）';
+      else note.textContent = '';
     }
 
     $('sN').addEventListener('input', e => set(+e.target.value || 1, false));
     $('sN').addEventListener('change', e => set(+e.target.value || 1, true));
     $('sSlider').addEventListener('input', e => { const n = Math.round(10 ** (+e.target.value / 1000 * MAXLOG)); $('sN').value = n; set(n, false); });
+    document.querySelectorAll('[data-scen]').forEach(b => b.addEventListener('click', () => {
+      st.scenario = b.dataset.scen; setPressed('[data-scen]', 'scen', st.scenario);
+      refreshPresetLabels(); renderS7();
+      $('sScenarioHint').textContent = st.scenario === 'biz'
+        ? '商業科の「企業活動の改善」につなげて、社員名簿・顧客の会員番号・商品コードで探索を考えます。'
+        : '';
+      set(st.n, false);
+    }));
 
     // ワークシートの表（タップで答え）
     const ans = v => h('td', { class: 'ans num' }, h('button', { type: 'button', 'aria-label': '答えを表示', 'data-v': v, onclick: e => { e.currentTarget.classList.add('is-shown'); e.currentTarget.textContent = v; } }));
@@ -553,11 +583,25 @@
     s6.append(h('thead', {}, h('tr', {}, h('th', { text: '箱の数 n' }), ...ns6.map(n => h('th', { class: 'num', text: n + '個' })))));
     s6.append(h('tbody', {}, h('tr', {}, h('th', { text: '必要な質問回数' }), ...ns6.map(n => ans(BS.questionsNeeded(n) + '回')))));
     const s7 = $('s7');
-    const ns7 = [[100, '100個'], [10000, '1万個'], [1000000, '100万個'], [365, '365個（誕生日）']];
-    s7.append(h('thead', {}, h('tr', {}, h('th', { text: '' }), ...ns7.map(([, l]) => h('th', { class: 'num', text: l })))));
-    s7.append(h('tbody', {},
-      h('tr', {}, h('th', { text: '線形探索（最大）' }), ...ns7.map(([n]) => ans(BS.formatNum(n) + '回'))),
-      h('tr', {}, h('th', { text: '二分探索' }), ...ns7.map(([n]) => ans(BS.questionsNeeded(n) + '回')))));
+    const ns7Defs = [
+      { v: 100, plain: '100個', biz: '社員100人\n（名簿）' },
+      { v: 10000, plain: '1万個', biz: '顧客1万人\n（会員番号）' },
+      { v: 1000000, plain: '100万個', biz: '商品100万件\n（商品コード）' },
+      { v: 365, plain: '365個（誕生日）' },
+    ];
+    const s7Label = d => (st.scenario === 'biz' && d.biz) ? d.biz : d.plain;
+    function renderS7() {
+      s7.replaceChildren();
+      s7.append(h('thead', {}, h('tr', {}, h('th', { text: '' }),
+        ...ns7Defs.map(d => h('th', { class: 'num', style: 'white-space: pre-line;', text: s7Label(d) })))));
+      s7.append(h('tbody', {},
+        h('tr', {}, h('th', { text: '線形探索（最大）' }), ...ns7Defs.map(d => ans(BS.formatNum(d.v) + '回'))),
+        h('tr', {}, h('th', { text: '二分探索' }), ...ns7Defs.map(d => ans(BS.questionsNeeded(d.v) + '回')))));
+      $('s7Note').textContent = st.scenario === 'biz'
+        ? '社員100人の名簿 → 商品100万件の商品コード（1万倍）になっても、二分探索は 7回 → 20回（約3倍）。'
+        : '100個 → 100万個（1万倍）になっても、二分探索は 7回 → 20回（約3倍）。';
+    }
+    renderS7();
     document.querySelectorAll('[data-reveal]').forEach(b => b.addEventListener('click', () => {
       document.querySelectorAll('#' + b.dataset.reveal + ' .ans button').forEach(x => { x.classList.add('is-shown'); x.textContent = x.dataset.v; });
     }));

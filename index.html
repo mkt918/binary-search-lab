@@ -345,6 +345,14 @@
         </div>
         <input type="range" id="sSlider" min="0" max="1000" value="150" aria-label="箱の数（対数スライダー）">
         <div class="presets" id="sPresets"></div>
+        <div class="row" style="margin-top: var(--space-sm);">
+          <span class="muted">場面：</span>
+          <div class="seg" role="group" aria-label="件数の言い換え" id="sScenarioSeg">
+            <button type="button" data-scen="plain" aria-pressed="true">数字のまま</button>
+            <button type="button" data-scen="biz" aria-pressed="false">企業の場面で</button>
+          </div>
+        </div>
+        <p class="note" id="sScenarioHint"></p>
       </div>
 
       <div class="readout">
@@ -359,6 +367,7 @@
           <div class="readout__sub" id="sLinTime"></div>
         </div>
       </div>
+      <p class="note" id="sScenarioNote"></p>
 
       <div class="card">
         <h3>半分ずつ減っていく様子（いちばん運が悪いとき）</h3>
@@ -393,7 +402,7 @@
           <button class="btn btn--ghost btn--sm" data-reveal="s7">答えを全部表示</button>
         </div>
         <div class="table-wrap" style="margin-top: var(--space-2xs);"><table class="log" id="s7"></table></div>
-        <p class="note">100個 → 100万個（1万倍）になっても、二分探索は 7回 → 20回（約3倍）。</p>
+        <p class="note" id="s7Note">100個 → 100万個（1万倍）になっても、二分探索は 7回 → 20回（約3倍）。</p>
       </div>
       <div class="card card--tint">
         <h3>1回の質問に1秒かかるとしたら</h3>
