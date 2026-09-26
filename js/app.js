@@ -21,24 +21,6 @@
   const setPressed = (sel, attr, val) => document.querySelectorAll(sel).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === String(val))));
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /** 分け方プレビュー（誕生日・箱で共通） */
-  function renderSplit(noEl, yesEl, verdictEl, lo, hi, q, unit) {
-    const { yes, no } = BS.splitSizes(lo, hi, q);
-    noEl.style.flexGrow = no; yesEl.style.flexGrow = yes;
-    noEl.textContent = no ? 'いいえ ' + no + unit : '';
-    yesEl.textContent = yes ? 'はい ' + yes + unit : '';
-    const qual = BS.splitQuality(yes, no);
-    const msg = {
-      half: 'ちょうど半分！ どちらの答えでも のこり約' + Math.max(yes, no) + unit,
-      near: 'ほぼ半分。運が悪いと のこり' + Math.max(yes, no) + unit,
-      skew: 'かたよっています。運が悪いと のこり' + Math.max(yes, no) + unit + 'もある',
-      useless: 'この質問では候補が減りません',
-    }[qual];
-    verdictEl.className = 'split__verdict q-' + qual;
-    verdictEl.textContent = msg;
-    return qual;
-  }
-
   /* =========================================================
    * ルーター・共通
    * ========================================================= */
@@ -79,7 +61,7 @@
     const BSCEN = {
       plain: {
         unit: '日', noun: '誕生日',
-        intro: 'カレンダーの日付をタップすると「その日より後ですか？」の質問になります。質問する前に、候補がどう分かれるか見てみよう。',
+        intro: 'カレンダーの日付をタップすると「その日より後ですか？」の質問になります。',
         hint: '',
       },
       biz: {
@@ -176,12 +158,11 @@
       // 質問
       const t = BS.dayToDate(st.q);
       selM.value = t.m; fillDays(t.m); selD.value = t.d;
-      renderSplit($('bSplitNo'), $('bSplitYes'), $('bVerdict'), st.lo, st.hi, st.q, sc.unit);
       const canAsk = !st.over && st.pending == null && count > 1;
-      ['bYes', 'bNo', 'bAsk', 'bSuggest'].forEach(id => ($(id).disabled = !canAsk));
+      ['bYes', 'bNo', 'bAsk'].forEach(id => ($(id).disabled = !canAsk));
       $('bAnswerHuman').classList.toggle('hide', st.mode !== 'human');
       $('bAnswerCpu').classList.toggle('hide', st.mode !== 'cpu');
-      if (count === 1 && !st.over) $('bVerdict').textContent = '候補は1つ。もう質問はいりません。宣言しよう！';
+      $('bVerdict').textContent = (!st.over && count === 1) ? '候補は1つ。もう質問はいりません。宣言しよう！' : '';
 
       // 宣言
       $('bDeclare').textContent = '「' + BS.dayLabel(declTarget()) + '」と宣言';
@@ -246,7 +227,6 @@
     $('bYes').addEventListener('click', () => answer(true));
     $('bNo').addEventListener('click', () => answer(false));
     $('bAsk').addEventListener('click', () => answer(st.secret > st.q));
-    $('bSuggest').addEventListener('click', () => { st.q = BS.halfSplit(st.lo, st.hi); render(); });
     $('bDeclare').addEventListener('click', declare);
     $('bHit').addEventListener('click', () => finish(true, st.pending));
     $('bMiss').addEventListener('click', () => finish(false, st.pending));
@@ -265,7 +245,7 @@
   const shared = { lastBox: null }; // 決定木ページへの受け渡し
 
   (function boxes() {
-    const st = { n: 8, key: 0, lo: 0, hi: 7, sel: null, hist: [], over: null, table: {}, showHalf: false, scenario: 'plain' };
+    const st = { n: 8, key: 0, lo: 0, hi: 7, sel: null, hist: [], over: null, table: {}, scenario: 'plain' };
     const boxEls = [];
 
     // 企業活動の場面への置き換え（学習指導要領「企業活動の改善」との接続。docs 6-1）
@@ -342,13 +322,7 @@
       });
 
       const sel = st.sel;
-      if (sel != null && !st.over && count > 1) renderSplit($('xSplitNo'), $('xSplitYes'), $('xVerdict'), st.lo, st.hi, sel, '個');
-      else {
-        $('xSplitNo').style.flexGrow = count; $('xSplitYes').style.flexGrow = 0;
-        $('xSplitNo').textContent = ''; $('xSplitYes').textContent = '';
-        $('xVerdict').className = 'split__verdict';
-        $('xVerdict').textContent = st.over ? '' : count === 1 ? '候補は1つ。宣言しよう！' : sc.verdictIdle;
-      }
+      $('xVerdict').textContent = st.over ? '' : count === 1 ? '候補は1つ。宣言しよう！' : sel == null ? sc.verdictIdle : '';
       $('xAsk').disabled = sel == null || !!st.over || count === 1;
       $('xAsk').textContent = sel == null ? '選んだ番号より後ですか？' : sel + '番より後ですか？';
       $('xDeclare').disabled = sel == null || !!st.over;
@@ -378,21 +352,19 @@
       const tb = $('xTable');
       tb.replaceChildren();
       const t = st.table[st.n] || {};
-      const half = BS.questionsNeeded(st.n);
       const nums = Object.values(t).filter(v => typeof v === 'number');
       const max = nums.length ? Math.max(...nums) : null;
       for (let k = 0; k < st.n; k++) {
         const v = t[k];
         const tr = h('tr', {},
           h('td', { text: k + '番' }),
-          h('td', { class: 'num', text: v == null ? '' : typeof v === 'number' ? v + '回' : v }),
-          h('td', { class: 'num', text: st.showHalf ? BS.searchPath(0, st.n - 1, k, 'half').length + '回' : '' }));
+          h('td', { class: 'num', text: v == null ? '' : typeof v === 'number' ? v + '回' : v }));
         if (v != null && v === max) tr.classList.add('is-max');
         tb.append(tr);
       }
       const filled = Object.keys(t).length;
       $('xTableNote').textContent = filled
-        ? filled + ' / ' + st.n + ' 個ためしました。' + (max != null ? 'あなたの最大は ' + max + ' 回。' : '') + (st.showHalf ? ' 半分ずつなら全部 ' + half + ' 回（' + st.n + ' = 2を' + half + '回かけた数）。' : '')
+        ? filled + ' / ' + st.n + ' 個ためしました。' + (max != null ? 'あなたの最大は ' + max + ' 回。' : '')
         : '';
     }
 
@@ -412,8 +384,6 @@
     $('xNew').addEventListener('click', newGame);
     $('xAsk').addEventListener('click', ask);
     $('xDeclare').addEventListener('click', declare);
-    $('xSuggest').addEventListener('click', () => { if (!st.over && st.lo < st.hi) { st.sel = BS.halfSplit(st.lo, st.hi); render(); } });
-    $('xShowHalf').addEventListener('click', () => { st.showHalf = !st.showHalf; $('xShowHalf').textContent = st.showHalf ? '「半分ずつなら」をかくす' : '「半分ずつなら」を表示'; renderTable(); });
     $('xClearTable').addEventListener('click', () => { st.table[st.n] = {}; renderTable(); });
     $('xToTree').addEventListener('click', () => { shared.toTree = { n: st.n, key: st.over ? st.key : null }; });
     newGame();

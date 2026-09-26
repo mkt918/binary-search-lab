@@ -47,12 +47,6 @@
   // 線形探索
   eq('線形探索 最大 = n', Math.max(...[0, 1, 2, 3, 4, 5, 6, 7].map(k => BS.linearCount(k))), 8);
 
-  // 分割サイズ
-  eq('splitSizes(0,364,182)', BS.splitSizes(0, 364, 182), { yes: 182, no: 183 });
-  eq('splitSizes 範囲外の質問は減らない', BS.splitSizes(10, 20, 30), { yes: 0, no: 11 });
-  eq('splitQuality half', BS.splitQuality(4, 4), 'half');
-  eq('splitQuality skew', BS.splitQuality(1, 7), 'skew');
-
   // 日付
   eq('dayToDate(0)', BS.dayToDate(0), { m: 1, d: 1 });
   eq('dayToDate(364)', BS.dayToDate(364), { m: 12, d: 31 });

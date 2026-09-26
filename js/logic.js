@@ -23,25 +23,9 @@
     return lo + Math.ceil(c / 2) - 1;
   }
 
-  /** 「q より後ですか？」を [lo,hi] に投げたときの はい／いいえ 各側の候補数。 */
-  function splitSizes(lo, hi, q) {
-    const no = Math.max(0, Math.min(q, hi) - lo + 1);
-    const yes = Math.max(0, hi - Math.max(q + 1, lo) + 1);
-    return { yes, no };
-  }
-
   /** 回答を反映した新しい範囲。 */
   function applyAnswer(lo, hi, q, isAfter) {
     return isAfter ? { lo: Math.max(lo, q + 1), hi } : { lo, hi: Math.min(hi, q) };
-  }
-
-  /** 分け方の評価（気づき用）。'half' | 'near' | 'skew' | 'useless' */
-  function splitQuality(yes, no) {
-    if (yes === 0 || no === 0) return 'useless';
-    const big = Math.max(yes, no), small = Math.min(yes, no);
-    if (big - small <= 1) return 'half';
-    if (small / big >= 0.6) return 'near';
-    return 'skew';
   }
 
   /** 戦略 strategy('half' | 'edge') で key を探したときの質問の列。 */
@@ -151,7 +135,7 @@
   function formatNum(n) { return n.toLocaleString('ja-JP'); }
 
   const api = {
-    questionsNeeded, halfSplit, splitSizes, applyAnswer, splitQuality, searchPath, linearCount,
+    questionsNeeded, halfSplit, applyAnswer, searchPath, linearCount,
     buildDecisionTree, buildMatchTree, matchCount, treeDepth, halvingChain,
     MONTH_DAYS, DAYS_IN_YEAR, dayToDate, dateToDay, dayLabel,
     binarySearchSteps, humanDuration, formatNum,
