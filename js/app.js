@@ -163,10 +163,9 @@
     }
 
     function undo() {
-      if (st.over) {
-        st.over = null;
-        const recs = store.get('bs.records', []); recs.pop(); store.set('bs.records', recs);
-      } else if (st.pending != null) st.pending = null;
+      // 宣言（結果）が出たあとは戻せない。1ゲームに宣言は1回だけ。次の人へ（はじめから）で新しいゲームへ。
+      if (st.over) return;
+      if (st.pending != null) st.pending = null;
       else if (st.hist.length) { const last = st.hist.pop(); last.days.forEach(d => { st.out[d] = false; }); }
       render();
     }

@@ -98,35 +98,33 @@
     </div>
   </div>
 
-  <div class="grid-2" style="margin-top: var(--space-md);">
-    <div class="card" id="bAskCard">
-      <h3>候補を消す</h3>
-      <p class="split__verdict" id="bVerdict">カレンダーをタップ、またはドラッグして消したい範囲を選ぼう。</p>
+  <div class="card" id="bAskCard" style="margin-top: var(--space-md);">
+    <h3>候補を消す</h3>
+    <p class="split__verdict" id="bVerdict">カレンダーをタップ、またはドラッグして消したい範囲を選ぼう。</p>
 
-      <div class="row" style="margin-top: var(--space-sm);">
-        <button class="btn btn--no btn--big" id="bErase">選んだ範囲を消す</button>
-        <button class="btn btn--ghost btn--sm" id="bClearSel">選択解除</button>
-      </div>
-      <div class="row" style="margin-top: var(--space-xs);">
-        <span class="muted">かんたん選択：</span>
-        <button class="btn btn--ghost btn--sm" id="bSelOdd">奇数の日をすべて選ぶ</button>
-        <button class="btn btn--ghost btn--sm" id="bSelEven">偶数の日をすべて選ぶ</button>
-      </div>
+    <div class="row" style="margin-top: var(--space-sm);">
+      <button class="btn btn--no btn--big" id="bErase">選んだ範囲を消す</button>
+      <button class="btn btn--ghost btn--sm" id="bClearSel">選択解除</button>
+    </div>
+    <div class="row" style="margin-top: var(--space-xs);">
+      <span class="muted">かんたん選択：</span>
+      <button class="btn btn--ghost btn--sm" id="bSelOdd">奇数の日をすべて選ぶ</button>
+      <button class="btn btn--ghost btn--sm" id="bSelEven">偶数の日をすべて選ぶ</button>
     </div>
 
-    <div class="card" id="bDeclareCard">
-      <h3>宣言する（1回だけ）</h3>
-      <p class="muted" id="bDeclareHint">候補が1つになったら宣言しよう。まだ候補が多いうちに宣言するのは運まかせ！</p>
-      <div class="row" style="margin-top: var(--space-2xs);">
-        <button class="btn btn--declare btn--big" id="bDeclare">…と宣言</button>
-      </div>
-      <div class="row hide" style="margin-top: var(--space-sm);" id="bJudge">
-        <span class="muted">出題者：当たっていますか？</span>
-        <button class="btn btn--sm" id="bHit">当たり</button>
-        <button class="btn btn--sm" id="bMiss">はずれ</button>
-      </div>
-      <div id="bResult" style="margin-top: var(--space-sm);"></div>
+    <hr style="margin: var(--space-md) 0; border: none; border-top: 2px solid var(--color-rule);">
+
+    <h3>宣言する（1ゲームに1回だけ）</h3>
+    <p class="muted" id="bDeclareHint">候補が1つになったら宣言しよう。まだ候補が多いうちに宣言するのは運まかせ！</p>
+    <div class="row" style="margin-top: var(--space-2xs);">
+      <button class="btn btn--declare btn--big" id="bDeclare">…と宣言</button>
     </div>
+    <div class="row hide" style="margin-top: var(--space-sm);" id="bJudge">
+      <span class="muted">出題者：当たっていますか？</span>
+      <button class="btn btn--sm" id="bHit">当たり</button>
+      <button class="btn btn--sm" id="bMiss">はずれ</button>
+    </div>
+    <div id="bResult" style="margin-top: var(--space-sm);"></div>
   </div>
 
   <div class="grid-2" style="margin-top: var(--space-md);">
