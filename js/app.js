@@ -506,7 +506,7 @@
       renderNBoxes();
       const t = BS.buildDecisionTree(0, st.n - 1, st.strat);
       const depth = BS.treeDepth(t);
-      if (st.level > depth) st.level = 0;
+      if (st.level !== Infinity && st.level > depth) st.level = 0;
       const info = BSTree.render($('tWrap'), t, {
         level: st.level, pathKey: st.key, levelLabels: 'q', terms: {},
         onPick: v => { st.key = st.key === v ? null : v; keySel.value = st.key == null ? '' : st.key; render(); },
