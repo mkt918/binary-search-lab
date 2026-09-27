@@ -328,7 +328,12 @@
       });
 
       const sel = st.sel;
-      $('xVerdict').textContent = st.over ? '' : count === 1 ? '候補は1つ。宣言しよう！' : '鍵は' + q + '番より後にありますか？';
+      const verdict = $('xVerdict');
+      verdict.replaceChildren();
+      if (!st.over) {
+        if (count === 1) verdict.append('候補は1つ。宣言しよう！');
+        else verdict.append('鍵は' + q + '番より番号が大きいですか？　', h('span', { class: 'muted', text: '(mid > ' + q + ')' }));
+      }
       $('xYes').disabled = !!st.over || count === 1;
       $('xNo').disabled = !!st.over || count === 1;
       $('xDeclare').disabled = sel == null || !!st.over;
@@ -348,7 +353,7 @@
       if (!st.hist.length) log.append(h('li', { text: 'まだ質問していません' }));
       st.hist.forEach(s => {
         const r = BS.applyAnswer(s.lo, s.hi, s.q, s.isAfter);
-        log.append(h('li', {}, '鍵は' + s.q + '番より後？ → ', h('span', { class: 'tag ' + (s.isAfter ? 'tag--yes' : 'tag--no'), text: s.isAfter ? 'はい' : 'いいえ' }),
+        log.append(h('li', {}, '鍵は' + s.q + '番より番号が大きい？ → ', h('span', { class: 'tag ' + (s.isAfter ? 'tag--yes' : 'tag--no'), text: s.isAfter ? 'はい' : 'いいえ' }),
           '　のこり ' + (r.lo === r.hi ? r.lo + '番' : r.lo + '〜' + r.hi + '番') + '（' + (r.hi - r.lo + 1) + '個）'));
       });
       renderTable();
