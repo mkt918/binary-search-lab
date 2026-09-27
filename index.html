@@ -81,9 +81,11 @@
       <button class="btn btn--sm" id="bReset">はじめから</button>
     </div>
 
-    <div class="stats" style="margin-bottom: var(--space-sm);">
+    <div class="stats" style="margin-bottom: var(--space-sm); grid-template-columns: repeat(2, minmax(0, 1fr)) repeat(2, minmax(0, 1.2fr));">
       <div class="stat stat--key"><div class="stat__label">のこりの候補</div><div class="stat__value"><span id="bCount">365</span><small>日</small></div></div>
       <div class="stat"><div class="stat__label">消した回数</div><div class="stat__value"><span id="bAsked">0</span><small>回</small></div></div>
+      <button class="btn btn--no" id="bErase" style="white-space: normal; min-width: 0; height: auto;">選んだ範囲を消す</button>
+      <button class="btn btn--declare" id="bDeclare" style="white-space: normal; min-width: 0; height: auto;">…と宣言</button>
     </div>
 
     <p class="range-big" id="bRange">1月1日 〜 12月31日</p>
@@ -99,26 +101,17 @@
   </div>
 
   <div class="card" id="bAskCard" style="margin-top: var(--space-md);">
-    <h3>候補を消す</h3>
+    <h3>候補を消す・宣言する（宣言は1ゲームに1回だけ）</h3>
     <p class="split__verdict" id="bVerdict">カレンダーをタップ、またはドラッグして消したい範囲を選ぼう。</p>
 
     <div class="row" style="margin-top: var(--space-sm);">
-      <button class="btn btn--no btn--big" id="bErase">選んだ範囲を消す</button>
       <button class="btn btn--ghost btn--sm" id="bClearSel">選択解除</button>
-    </div>
-    <div class="row" style="margin-top: var(--space-xs);">
       <span class="muted">かんたん選択：</span>
       <button class="btn btn--ghost btn--sm" id="bSelOdd">奇数の日をすべて選ぶ</button>
       <button class="btn btn--ghost btn--sm" id="bSelEven">偶数の日をすべて選ぶ</button>
     </div>
 
-    <hr style="margin: var(--space-md) 0; border: none; border-top: 2px solid var(--color-rule);">
-
-    <h3>宣言する（1ゲームに1回だけ）</h3>
-    <p class="muted" id="bDeclareHint">候補が1つになったら宣言しよう。まだ候補が多いうちに宣言するのは運まかせ！</p>
-    <div class="row" style="margin-top: var(--space-2xs);">
-      <button class="btn btn--declare btn--big" id="bDeclare">…と宣言</button>
-    </div>
+    <p class="muted" id="bDeclareHint" style="margin-top: var(--space-sm);">候補が1つになったら宣言しよう。まだ候補が多いうちに宣言するのは運まかせ！</p>
     <div class="row hide" style="margin-top: var(--space-sm);" id="bJudge">
       <span class="muted">出題者：当たっていますか？</span>
       <button class="btn btn--sm" id="bHit">当たり</button>
@@ -179,8 +172,8 @@
         <div class="boxes" id="xBoxes"></div>
         <p class="split__verdict" id="xVerdict" style="margin-top: var(--space-sm);">箱をタップして選んでください</p>
         <div class="row" style="margin-top: var(--space-sm);">
-          <button class="btn btn--primary btn--big" id="xAskBefore" disabled>選んだ番号より前ですか？</button>
-          <button class="btn btn--primary btn--big" id="xAsk" disabled>選んだ番号より後ですか？</button>
+          <button class="btn btn--primary btn--big" id="xAskBefore" disabled>鍵は選んだ番号より前にありますか？</button>
+          <button class="btn btn--primary btn--big" id="xAsk" disabled>鍵は選んだ番号より後にありますか？</button>
           <button class="btn btn--declare btn--big" id="xDeclare" disabled>この箱だと宣言</button>
         </div>
         <div class="row" style="margin-top: var(--space-2xs);">
@@ -269,13 +262,16 @@
   <div class="card" style="margin-bottom: var(--space-md);">
     <div class="row" style="gap: var(--space-sm);">
       <label class="field" style="flex: 1 1 220px;"><span id="tCountLabel">箱の数</span> <b class="num" id="tNLabel">8</b><span id="tCountUnit">個</span>
+        <button type="button" class="btn btn--ghost btn--sm" id="tNMinus" aria-label="箱を1個減らす">◀</button>
         <input type="range" id="tN" min="2" max="16" value="8" style="flex: 1;">
+        <button type="button" class="btn btn--ghost btn--sm" id="tNPlus" aria-label="箱を1個増やす">▶</button>
       </label>
       <div class="seg" role="group" aria-label="質問のしかた">
         <button type="button" data-tstrat="half" aria-pressed="true">半分に分ける</button>
         <button type="button" data-tstrat="edge" aria-pressed="false">端から聞く</button>
       </div>
     </div>
+    <div class="boxes" id="tNBoxes" style="margin-top: var(--space-xs);" aria-hidden="true"></div>
     <div class="row" style="margin-top: var(--space-sm);">
       <span class="muted">1段ずつ表示：</span>
       <button class="btn btn--sm" id="tPrev" aria-label="1段もどす">◀</button>

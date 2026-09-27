@@ -323,9 +323,9 @@
       const sel = st.sel;
       $('xVerdict').textContent = st.over ? '' : count === 1 ? '候補は1つ。宣言しよう！' : sel == null ? '箱をタップして選んでください' : '';
       $('xAskBefore').disabled = sel == null || !!st.over || count === 1;
-      $('xAskBefore').textContent = sel == null ? '選んだ番号より前ですか？' : sel + '番より前ですか？';
+      $('xAskBefore').textContent = sel == null ? '鍵は選んだ番号より前にありますか？' : '鍵は' + sel + '番より前にありますか？';
       $('xAsk').disabled = sel == null || !!st.over || count === 1;
-      $('xAsk').textContent = sel == null ? '選んだ番号より後ですか？' : sel + '番より後ですか？';
+      $('xAsk').textContent = sel == null ? '鍵は選んだ番号より後にありますか？' : '鍵は' + sel + '番より後にありますか？';
       $('xDeclare').disabled = sel == null || !!st.over;
       $('xDeclare').textContent = sel == null ? 'この箱だと宣言' : sel + '番だと宣言';
 
@@ -343,7 +343,7 @@
       if (!st.hist.length) log.append(h('li', { text: 'まだ質問していません' }));
       st.hist.forEach(s => {
         const r = BS.applyAnswer(s.lo, s.hi, s.q, s.isAfterQ);
-        const qLabel = s.sel + (s.dir === 'before' ? '番より前？' : '番より後？');
+        const qLabel = '鍵は' + s.sel + (s.dir === 'before' ? '番より前？' : '番より後？');
         log.append(h('li', {}, qLabel + ' → ', h('span', { class: 'tag ' + (s.answeredYes ? 'tag--yes' : 'tag--no'), text: s.answeredYes ? 'はい' : 'いいえ' }),
           '　のこり ' + (r.lo === r.hi ? r.lo + '番' : r.lo + '〜' + r.hi + '番') + '（' + (r.hi - r.lo + 1) + '個）'));
       });
@@ -471,13 +471,32 @@
   (function tree() {
     const st = { n: 8, strat: 'half', level: 0, key: null };
     const keySel = $('tKey');
+    const nBoxes = $('tNBoxes');
 
     function fillKeys() {
       keySel.replaceChildren(h('option', { value: '', text: 'なし' }));
       for (let i = 0; i < st.n; i++) keySel.append(h('option', { value: i, text: i + '番' }));
       keySel.value = st.key == null ? '' : st.key;
     }
+    function renderNBoxes() {
+      nBoxes.replaceChildren();
+      nBoxes.style.setProperty('--n', Math.min(st.n, 8));
+      for (let i = 0; i < st.n; i++) {
+        const b = h('div', { class: 'box' }, String(i));
+        b.style.cursor = 'default';
+        nBoxes.append(b);
+      }
+    }
+    function setN(n) {
+      n = Math.max(2, Math.min(16, n));
+      st.n = n;
+      $('tN').value = n;
+      if (st.key != null && st.key >= st.n) st.key = null;
+      st.level = 0;
+      fillKeys(); render();
+    }
     function render() {
+      renderNBoxes();
       const t = BS.buildDecisionTree(0, st.n - 1, st.strat);
       const depth = BS.treeDepth(t);
       if (st.level > depth) st.level = 0;
@@ -485,6 +504,8 @@
         level: st.level, pathKey: st.key, levelLabels: 'q', terms: {},
         onPick: v => { st.key = st.key === v ? null : v; keySel.value = st.key == null ? '' : st.key; render(); },
       });
+      $('tNMinus').disabled = st.n <= 2;
+      $('tNPlus').disabled = st.n >= 16;
       $('tNLabel').textContent = st.n;
       $('tCountLabel').textContent = '箱の数';
       $('tCountUnit').textContent = '個';
@@ -499,7 +520,9 @@
         ? '半分ずつ：' + chain + '。どの箱でも最大 ' + depth + ' 回。分かれ道の数はいつも「箱の数−1」（トーナメントの試合数と同じ）。' + (st.key != null ? '　' + st.key + '番への道すじは ' + BS.searchPath(0, st.n - 1, st.key, 'half').length + ' 回。' : '　箱（葉）をタップすると、そこへの道すじが光ります。')
         : '端から聞くと、木が片側にのびて高くなります。運が悪いと ' + depth + ' 回。これは線形探索と同じ考え方です。';
     }
-    $('tN').addEventListener('input', e => { st.n = +e.target.value; if (st.key != null && st.key >= st.n) st.key = null; st.level = 0; fillKeys(); render(); });
+    $('tN').addEventListener('input', e => setN(+e.target.value));
+    $('tNMinus').addEventListener('click', () => setN(st.n - 1));
+    $('tNPlus').addEventListener('click', () => setN(st.n + 1));
     document.querySelectorAll('[data-tstrat]').forEach(b => b.addEventListener('click', () => { st.strat = b.dataset.tstrat; setPressed('[data-tstrat]', 'tstrat', st.strat); st.level = 0; render(); }));
     keySel.addEventListener('change', () => { st.key = keySel.value === '' ? null : +keySel.value; render(); });
     const depthNow = () => BS.treeDepth(BS.buildDecisionTree(0, st.n - 1, st.strat));
