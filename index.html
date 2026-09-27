@@ -76,15 +76,9 @@
   </div>
 
   <div class="card">
-    <div class="row" style="justify-content: space-between; margin-bottom: var(--space-sm);">
-      <div class="row">
-        <label class="field">出題者 <input type="text" id="bAsker" placeholder="例：先生／Aさん" size="10"></label>
-        <label class="field">予想 <input type="number" id="bGuess" min="1" max="365" placeholder="?" style="width: 5em">回</label>
-      </div>
-      <div class="row">
-        <button class="btn btn--ghost btn--sm" id="bUndo">1つ戻す</button>
-        <button class="btn btn--sm" id="bReset">はじめから</button>
-      </div>
+    <div class="row" style="justify-content: flex-end; margin-bottom: var(--space-sm);">
+      <button class="btn btn--ghost btn--sm" id="bUndo">1つ戻す</button>
+      <button class="btn btn--sm" id="bReset">はじめから</button>
     </div>
 
     <div class="stats" style="margin-bottom: var(--space-sm);">
@@ -112,6 +106,11 @@
       <div class="row" style="margin-top: var(--space-sm);">
         <button class="btn btn--no btn--big" id="bErase">選んだ範囲を消す</button>
         <button class="btn btn--ghost btn--sm" id="bClearSel">選択解除</button>
+      </div>
+      <div class="row" style="margin-top: var(--space-xs);">
+        <span class="muted">かんたん選択：</span>
+        <button class="btn btn--ghost btn--sm" id="bSelOdd">奇数の日をすべて選ぶ</button>
+        <button class="btn btn--ghost btn--sm" id="bSelEven">偶数の日をすべて選ぶ</button>
       </div>
     </div>
 
@@ -148,7 +147,7 @@
       <p class="muted" style="margin: var(--space-2xs) 0;">宣言が終わるとここに追加されます（この端末だけに保存）。</p>
       <div class="table-wrap">
         <table class="log">
-          <thead><tr><th class="num">#</th><th>出題者</th><th class="num">予想</th><th class="num">質問回数</th><th>結果</th></tr></thead>
+          <thead><tr><th class="num">#</th><th class="num">消した回数</th><th>結果</th></tr></thead>
           <tbody id="bRecords"></tbody>
         </table>
       </div>

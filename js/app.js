@@ -54,7 +54,7 @@
    * ========================================================= */
   (function birthday() {
     const N = BS.DAYS_IN_YEAR;
-    const st = { out: new Array(N).fill(false), selA: null, selB: null, hist: [], over: null, pending: null };
+    const st = { out: new Array(N).fill(false), sel: new Set(), selKind: null, hist: [], over: null, pending: null };
     const cells = [];
 
     // カレンダー
@@ -76,18 +76,36 @@
       const el = document.elementFromPoint(x, y);
       return el && el.dataset && el.dataset.day != null ? el : null;
     }
-    function setSelection(a, b) { if (st.over) return; st.selA = Math.min(a, b); st.selB = Math.max(a, b); render(); }
+    function setRangeSelection(a, b) {
+      if (st.over) return;
+      const lo = Math.min(a, b), hi = Math.max(a, b);
+      st.sel = new Set();
+      for (let i = lo; i <= hi; i++) st.sel.add(i);
+      st.selKind = 'range';
+      render();
+    }
+    function selectParity(parity) {
+      if (st.over) return;
+      st.sel = new Set();
+      for (let day = 0; day < N; day++) {
+        const { d } = BS.dayToDate(day);
+        if ((d % 2 === 1) === (parity === 'odd')) st.sel.add(day);
+      }
+      st.selKind = parity;
+      render();
+    }
+    function clearSelection() { st.sel = new Set(); st.selKind = null; render(); }
     cal.addEventListener('pointerdown', e => {
       const el = cellAtPoint(e.clientX, e.clientY);
       if (!el) return;
       dragAnchor = +el.dataset.day;
       dragging = true;
-      setSelection(dragAnchor, dragAnchor);
+      setRangeSelection(dragAnchor, dragAnchor);
     });
     window.addEventListener('pointermove', e => {
       if (!dragging) return;
       const el = cellAtPoint(e.clientX, e.clientY);
-      if (el) setSelection(dragAnchor, +el.dataset.day);
+      if (el) setRangeSelection(dragAnchor, +el.dataset.day);
     });
     window.addEventListener('pointerup', () => { dragging = false; });
 
@@ -97,34 +115,41 @@
       for (let i = 0; i < N; i++) if (!st.out[i]) { if (min == null) min = i; max = i; count++; }
       return { min, max, count, contiguous: min != null && (max - min + 1 === count) };
     }
+    function selectionLabel() {
+      const days = [...st.sel].sort((a, b) => a - b);
+      if (st.selKind === 'odd') return '奇数の日';
+      if (st.selKind === 'even') return '偶数の日';
+      if (days.length === 1) return BS.dayLabel(days[0]);
+      return BS.dayLabel(days[0]) + '〜' + BS.dayLabel(days[days.length - 1]);
+    }
 
     function reset() {
       st.out = new Array(N).fill(false);
-      Object.assign(st, { selA: null, selB: null, hist: [], over: null, pending: null });
+      Object.assign(st, { sel: new Set(), selKind: null, hist: [], over: null, pending: null });
       render();
     }
 
     function erase() {
-      if (st.over || st.selA == null) return;
+      if (st.over || st.sel.size === 0) return;
       const days = [];
-      for (let i = st.selA; i <= st.selB; i++) if (!st.out[i]) { st.out[i] = true; days.push(i); }
+      st.sel.forEach(i => { if (!st.out[i]) { st.out[i] = true; days.push(i); } });
       if (!days.length) return;
-      st.hist.push({ a: st.selA, b: st.selB, days, remainingAfter: remainingCount() });
-      st.selA = st.selB = null;
+      st.hist.push({ label: selectionLabel(), days, remainingAfter: remainingCount() });
+      st.sel = new Set(); st.selKind = null;
       render();
     }
 
     const declTarget = () => {
       const env = remainingEnvelope();
       if (env.count === 1) return env.min;
-      return (st.selA != null && st.selA === st.selB) ? st.selA : null;
+      return st.sel.size === 1 ? [...st.sel][0] : null;
     };
 
-    function finish(hit, day) {
-      st.over = { hit, day };
+    function finish(hit) {
+      st.over = { hit, day: st.pending };
       st.pending = null;
       const recs = store.get('bs.records', []);
-      recs.push({ asker: $('bAsker').value.trim() || '—', guess: $('bGuess').value || '', count: st.hist.length, hit });
+      recs.push({ count: st.hist.length, hit });
       store.set('bs.records', recs);
       render();
     }
@@ -159,7 +184,7 @@
       const ans = st.over ? st.over.day : null;
       let selRemain = 0;
       cells.forEach((c, i) => {
-        const inSel = !st.over && st.selA != null && i >= st.selA && i <= st.selB;
+        const inSel = !st.over && st.sel.has(i);
         if (inSel && !st.out[i]) selRemain++;
         c.classList.toggle('is-out', st.out[i]);
         c.classList.toggle('is-sel', inSel);
@@ -167,11 +192,11 @@
       });
 
       // 選択・消す
-      $('bVerdict').textContent = st.selA == null ? 'カレンダーをタップ、またはドラッグして消したい範囲を選ぼう。'
-        : st.selA === st.selB ? BS.dayLabel(st.selA) + 'を選択中'
-        : BS.dayLabel(st.selA) + ' 〜 ' + BS.dayLabel(st.selB) + '（' + (st.selB - st.selA + 1) + '日）を選択中';
+      $('bVerdict').textContent = st.sel.size === 0 ? 'カレンダーをタップ、またはドラッグして消したい範囲を選ぼう。'
+        : st.sel.size === 1 ? selectionLabel() + 'を選択中'
+        : selectionLabel() + '（' + st.sel.size + '日）を選択中';
       $('bErase').disabled = !!st.over || selRemain === 0 || (env.count - selRemain) < 1;
-      $('bClearSel').disabled = !!st.over || st.selA == null;
+      $('bClearSel').disabled = !!st.over || st.sel.size === 0;
 
       // 宣言
       const dt = declTarget();
@@ -186,11 +211,9 @@
       res.replaceChildren();
       if (st.over) {
         const n = st.hist.length;
-        const g = $('bGuess').value;
         const b = h('div', { class: 'banner ' + (st.over.hit ? 'banner--ok' : 'banner--ng') });
         if (st.over.hit) b.append(h('strong', { text: '当たり！ ' }), '消した回数 ' + n + ' 回で当てました。');
         else b.append(h('strong', { text: 'はずれ… ' }), '宣言は1回だけ。');
-        if (g) b.append(h('br'), '予想は ' + g + ' 回でした。');
         b.append(h('br'), '（ちょうど半分ずつ消せば、どの誕生日でも 9 回以内で必ず当たる）');
         res.append(b, h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: '次の人へ（はじめから）', onclick: reset })));
       }
@@ -200,10 +223,9 @@
       log.replaceChildren();
       if (!st.hist.length) log.append(h('tr', {}, h('td', { colspan: 3, class: 'muted', text: 'まだ消していません' })));
       st.hist.forEach((s, i) => {
-        const label = s.a === s.b ? BS.dayLabel(s.a) : BS.dayLabel(s.a) + '〜' + BS.dayLabel(s.b);
         log.append(h('tr', {},
           h('td', { class: 'num', text: i + 1 }),
-          h('td', { text: label + '（' + s.days.length + '日）' }),
+          h('td', { text: s.label + '（' + s.days.length + '日）' }),
           h('td', { class: 'num', text: s.remainingAfter + '日' })));
       });
       renderRecords();
@@ -213,23 +235,22 @@
       const recs = store.get('bs.records', []);
       const tb = $('bRecords');
       tb.replaceChildren();
-      if (!recs.length) { tb.append(h('tr', {}, h('td', { colspan: 5, class: 'muted', text: 'まだ記録はありません' }))); return; }
+      if (!recs.length) { tb.append(h('tr', {}, h('td', { colspan: 3, class: 'muted', text: 'まだ記録はありません' }))); return; }
       recs.forEach((r, i) => tb.append(h('tr', {},
         h('td', { class: 'num', text: i + 1 }),
-        h('td', { text: r.asker }),
-        h('td', { class: 'num', text: r.guess ? r.guess + '回' : '—' }),
         h('td', { class: 'num', text: r.count + '回' }),
         h('td', {}, h('span', { class: 'tag ' + (r.hit ? 'tag--ok' : 'tag--ng'), text: r.hit ? '当たり' : 'はずれ' })))));
     }
 
     $('bErase').addEventListener('click', erase);
-    $('bClearSel').addEventListener('click', () => { st.selA = st.selB = null; render(); });
+    $('bClearSel').addEventListener('click', clearSelection);
+    $('bSelOdd').addEventListener('click', () => selectParity('odd'));
+    $('bSelEven').addEventListener('click', () => selectParity('even'));
     $('bDeclare').addEventListener('click', declare);
-    $('bHit').addEventListener('click', () => finish(true, st.pending));
-    $('bMiss').addEventListener('click', () => finish(false, st.pending));
+    $('bHit').addEventListener('click', () => finish(true));
+    $('bMiss').addEventListener('click', () => finish(false));
     $('bUndo').addEventListener('click', undo);
     $('bReset').addEventListener('click', reset);
-    $('bGuess').addEventListener('input', () => { if (st.over) render(); });
     $('bClearRecords').addEventListener('click', () => {
       if (confirm('この端末に保存した記録をすべて消しますか？')) { store.set('bs.records', []); renderRecords(); }
     });
