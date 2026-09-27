@@ -238,6 +238,8 @@ table.log tr.is-max td { background: var(--color-accent-wash); }
 
 .boxes { display: grid; grid-template-columns: repeat(var(--n, 8), minmax(0, 1fr)); gap: clamp(4px, 1.2vw, 12px); }
 .boxes--wrap { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.boxes--tap { display: flex; overflow-x: auto; padding-bottom: 4px; }
+.boxes--tap .box { flex: 0 0 var(--tap); }
 .box {
   position: relative; aspect-ratio: 1 / 1.1; min-width: 0;
   border: 3px solid var(--color-accent-deep); border-radius: clamp(8px, 1.5vw, 16px);

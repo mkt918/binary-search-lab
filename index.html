@@ -268,7 +268,6 @@
     <div class="row" style="gap: var(--space-sm);">
       <label class="field" style="flex: 1 1 220px;"><span id="tCountLabel">箱の数</span> <b class="num" id="tNLabel">8</b><span id="tCountUnit">個</span>
         <button type="button" class="btn btn--ghost btn--sm" id="tNMinus" aria-label="箱を1個減らす">◀</button>
-        <input type="range" id="tN" min="2" max="16" value="8" style="flex: 1;">
         <button type="button" class="btn btn--ghost btn--sm" id="tNPlus" aria-label="箱を1個増やす">▶</button>
       </label>
       <div class="seg" role="group" aria-label="質問のしかた">
@@ -276,7 +275,8 @@
         <button type="button" data-tstrat="edge" aria-pressed="false">端から聞く</button>
       </div>
     </div>
-    <div class="boxes" id="tNBoxes" style="margin-top: var(--space-xs);" aria-hidden="true"></div>
+    <p class="muted" style="margin: var(--space-xs) 0 0;">箱をタップすると、そこまでの個数に変わります。</p>
+    <div class="boxes boxes--tap" id="tNBoxes" style="margin-top: var(--space-2xs);"></div>
     <div class="row" style="margin-top: var(--space-sm);">
       <span class="muted">1段ずつ表示：</span>
       <button class="btn btn--sm" id="tPrev" aria-label="1段もどす">◀</button>

@@ -489,20 +489,17 @@
       for (let i = 0; i < st.n; i++) keySel.append(h('option', { value: i, text: i + '番' }));
       keySel.value = st.key == null ? '' : st.key;
     }
+    const MAX = 16; // 常に16枠を横1列で表示し、n個目までを色付け・残りは灰色にする。タップでそこまでの個数を選べる
     function renderNBoxes() {
-      const MAX = 16; // tN のスライダー上限。常に16枠を横1列で表示し、n個目までを色付け・残りは灰色にする
       nBoxes.replaceChildren();
-      nBoxes.style.setProperty('--n', MAX);
       for (let i = 0; i < MAX; i++) {
-        const b = h('div', { class: 'box' + (i >= st.n ? ' is-out' : '') }, String(i));
-        b.style.cursor = 'default';
+        const b = h('button', { type: 'button', class: 'box' + (i >= st.n ? ' is-out' : ''), 'aria-label': (i + 1) + '個にする', onclick: () => setN(i + 1) }, String(i));
         nBoxes.append(b);
       }
     }
     function setN(n) {
-      n = Math.max(2, Math.min(16, n));
+      n = Math.max(2, Math.min(MAX, n));
       st.n = n;
-      $('tN').value = n;
       if (st.key != null && st.key >= st.n) st.key = null;
       st.level = 0;
       fillKeys(); render();
@@ -517,7 +514,7 @@
         onPick: v => { st.key = st.key === v ? null : v; keySel.value = st.key == null ? '' : st.key; render(); },
       });
       $('tNMinus').disabled = st.n <= 2;
-      $('tNPlus').disabled = st.n >= 16;
+      $('tNPlus').disabled = st.n >= MAX;
       $('tNLabel').textContent = st.n;
       $('tCountLabel').textContent = '箱の数';
       $('tCountUnit').textContent = '個';
@@ -532,7 +529,6 @@
         ? '半分ずつ：' + chain + '。どの箱でも最大 ' + depth + ' 回。分かれ道の数はいつも「箱の数−1」（トーナメントの試合数と同じ）。' + (st.key != null ? '　' + st.key + '番への道すじは ' + BS.searchPath(0, st.n - 1, st.key, 'half').length + ' 回。' : '　箱（葉）をタップすると、そこへの道すじが光ります。')
         : '端から聞くと、木が片側にのびて高くなります。運が悪いと ' + depth + ' 回。これは線形探索と同じ考え方です。';
     }
-    $('tN').addEventListener('input', e => setN(+e.target.value));
     $('tNMinus').addEventListener('click', () => setN(st.n - 1));
     $('tNPlus').addEventListener('click', () => setN(st.n + 1));
     document.querySelectorAll('[data-tstrat]').forEach(b => b.addEventListener('click', () => { st.strat = b.dataset.tstrat; setPressed('[data-tstrat]', 'tstrat', st.strat); st.level = 0; render(); }));
@@ -546,7 +542,7 @@
       onShow() {
         if (shared.toTree) {
           st.n = shared.toTree.n; st.key = shared.toTree.key; st.strat = 'half'; st.level = 0;
-          $('tN').value = st.n; setPressed('[data-tstrat]', 'tstrat', 'half');
+          setPressed('[data-tstrat]', 'tstrat', 'half');
           shared.toTree = null;
         }
         fillKeys(); render();
