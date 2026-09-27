@@ -151,7 +151,7 @@
   <div class="page-head">
     <span class="step-tag">ワークシート 4</span>
     <h2>箱の鍵さがし</h2>
-    <p id="boxesIntro">どれか1つの箱に鍵が入っています。箱をタップして選び、「〇番より後ですか？」と質問しよう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？</p>
+    <p id="boxesIntro">どれか1つの箱に鍵が入っています。「〇番より後にありますか？」の質問に「はい／いいえ」で答えて絞りこもう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？</p>
   </div>
 
   <div class="grid-2">
@@ -163,17 +163,22 @@
             <button type="button" data-xn="8" aria-pressed="true">8個</button>
             <button type="button" data-xn="16" aria-pressed="false">16個</button>
           </div>
-          <button class="btn btn--sm" id="xNew">新しく鍵をかくす</button>
+          <button class="btn btn--sm" id="xNew">やりなおす</button>
+        </div>
+        <div class="row" style="margin-bottom: var(--space-sm);">
+          <label class="field">鍵の場所 <select id="xKeySel"></select></label>
         </div>
         <div class="stats" style="margin-bottom: var(--space-sm);">
           <div class="stat stat--key"><div class="stat__label">のこりの候補</div><div class="stat__value"><span id="xCount">8</span><small>個</small></div></div>
           <div class="stat"><div class="stat__label">質問した回数</div><div class="stat__value"><span id="xAsked">0</span><small>回</small></div></div>
         </div>
         <div class="boxes" id="xBoxes"></div>
-        <p class="split__verdict" id="xVerdict" style="margin-top: var(--space-sm);">箱をタップして選んでください</p>
+        <p class="split__verdict" id="xVerdict" style="margin-top: var(--space-sm);">鍵は3番より後にありますか？</p>
         <div class="row" style="margin-top: var(--space-sm);">
-          <button class="btn btn--primary btn--big" id="xAskBefore" disabled>鍵は選んだ番号より前にありますか？</button>
-          <button class="btn btn--primary btn--big" id="xAsk" disabled>鍵は選んだ番号より後にありますか？</button>
+          <button class="btn btn--yes btn--big" id="xYes" disabled>はい</button>
+          <button class="btn btn--no btn--big" id="xNo" disabled>いいえ</button>
+        </div>
+        <div class="row" style="margin-top: var(--space-2xs);">
           <button class="btn btn--declare btn--big" id="xDeclare" disabled>この箱だと宣言</button>
         </div>
         <div class="row" style="margin-top: var(--space-2xs);">

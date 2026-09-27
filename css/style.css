@@ -121,6 +121,8 @@ main { max-width: 1180px; margin: 0 auto; padding: var(--space-md) var(--space-s
 .btn--primary { background: var(--color-accent); color: var(--color-accent-ink); box-shadow: 0 3px 0 var(--color-accent-deep); }
 .btn--primary:hover { background: var(--color-accent-hover); }
 .btn--primary:active { box-shadow: 0 1px 0 var(--color-accent-deep); transform: translateY(2px); }
+.btn--yes { background: var(--color-accent-2); color: var(--color-accent-2-ink); box-shadow: 0 3px 0 var(--color-accent-2-deep); }
+.btn--yes:hover { background: var(--color-accent-2-deep); }
 .btn--no { background: var(--color-ink-2); color: var(--color-paper); box-shadow: 0 3px 0 var(--color-ink); }
 .btn--no:hover { background: var(--color-ink); }
 .btn--declare { background: var(--color-accent-3); color: var(--color-accent-3-ink); box-shadow: 0 3px 0 var(--color-accent-3-deep); }

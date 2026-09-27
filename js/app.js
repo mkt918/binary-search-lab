@@ -264,9 +264,17 @@
   (function boxes() {
     const st = { n: 8, key: 0, lo: 0, hi: 7, sel: null, hist: [], over: null, table: {} };
     const boxEls = [];
+    const keySel = $('xKeySel');
 
+    function fillKeySel() {
+      const cur = keySel.value;
+      keySel.replaceChildren(h('option', { value: 'r', text: 'ランダム（ひみつ）' }));
+      for (let i = 0; i < st.n; i++) keySel.append(h('option', { value: String(i), text: i + '番' }));
+      keySel.value = (cur === 'r' || (cur !== '' && +cur < st.n)) ? cur : 'r';
+    }
     function newGame() {
-      Object.assign(st, { key: randInt(st.n), lo: 0, hi: st.n - 1, sel: null, hist: [], over: null });
+      const key = keySel.value === 'r' ? randInt(st.n) : +keySel.value;
+      Object.assign(st, { key, lo: 0, hi: st.n - 1, sel: null, hist: [], over: null });
       build();
       render();
     }
@@ -282,15 +290,12 @@
       if (!st.table[st.n]) st.table[st.n] = {};
     }
 
-    function ask(dir) {
-      if (st.sel == null || st.over) return;
-      const sel = st.sel;
-      const q = dir === 'before' ? sel - 1 : sel;
-      const isAfterQ = st.key > q;
-      const answeredYes = dir === 'before' ? !isAfterQ : isAfterQ;
-      st.hist.push({ lo: st.lo, hi: st.hi, q, isAfterQ, sel, dir, answeredYes });
-      Object.assign(st, BS.applyAnswer(st.lo, st.hi, q, isAfterQ));
-      st.sel = st.lo === st.hi ? st.lo : null;
+    function answer(isAfter) {
+      if (st.over || st.lo === st.hi) return;
+      const q = BS.halfSplit(st.lo, st.hi);
+      st.hist.push({ lo: st.lo, hi: st.hi, q, isAfter });
+      Object.assign(st, BS.applyAnswer(st.lo, st.hi, q, isAfter));
+      if (st.lo === st.hi) st.sel = st.lo;
       render();
     }
     function declare() {
@@ -304,6 +309,7 @@
 
     function render() {
       const count = st.hi - st.lo + 1;
+      const q = BS.halfSplit(st.lo, st.hi);
       $('xCount').textContent = count;
       $('xAsked').textContent = st.hist.length;
       boxEls.forEach((b, i) => {
@@ -316,16 +322,15 @@
         } else {
           if (!inR) b.classList.add('is-out');
           if (i === st.sel) b.classList.add('is-selected');
+          if (count > 1 && i === q) b.classList.add('is-mid');
         }
         b.replaceChildren(String(i));
       });
 
       const sel = st.sel;
-      $('xVerdict').textContent = st.over ? '' : count === 1 ? '候補は1つ。宣言しよう！' : sel == null ? '箱をタップして選んでください' : '';
-      $('xAskBefore').disabled = sel == null || !!st.over || count === 1;
-      $('xAskBefore').textContent = sel == null ? '鍵は選んだ番号より前にありますか？' : '鍵は' + sel + '番より前にありますか？';
-      $('xAsk').disabled = sel == null || !!st.over || count === 1;
-      $('xAsk').textContent = sel == null ? '鍵は選んだ番号より後にありますか？' : '鍵は' + sel + '番より後にありますか？';
+      $('xVerdict').textContent = st.over ? '' : count === 1 ? '候補は1つ。宣言しよう！' : '鍵は' + q + '番より後にありますか？';
+      $('xYes').disabled = !!st.over || count === 1;
+      $('xNo').disabled = !!st.over || count === 1;
       $('xDeclare').disabled = sel == null || !!st.over;
       $('xDeclare').textContent = sel == null ? 'この箱だと宣言' : sel + '番だと宣言';
 
@@ -342,9 +347,8 @@
       log.replaceChildren();
       if (!st.hist.length) log.append(h('li', { text: 'まだ質問していません' }));
       st.hist.forEach(s => {
-        const r = BS.applyAnswer(s.lo, s.hi, s.q, s.isAfterQ);
-        const qLabel = '鍵は' + s.sel + (s.dir === 'before' ? '番より前？' : '番より後？');
-        log.append(h('li', {}, qLabel + ' → ', h('span', { class: 'tag ' + (s.answeredYes ? 'tag--yes' : 'tag--no'), text: s.answeredYes ? 'はい' : 'いいえ' }),
+        const r = BS.applyAnswer(s.lo, s.hi, s.q, s.isAfter);
+        log.append(h('li', {}, '鍵は' + s.q + '番より後？ → ', h('span', { class: 'tag ' + (s.isAfter ? 'tag--yes' : 'tag--no'), text: s.isAfter ? 'はい' : 'いいえ' }),
           '　のこり ' + (r.lo === r.hi ? r.lo + '番' : r.lo + '〜' + r.hi + '番') + '（' + (r.hi - r.lo + 1) + '個）'));
       });
       renderTable();
@@ -371,14 +375,16 @@
     }
 
     document.querySelectorAll('[data-xn]').forEach(b => b.addEventListener('click', () => {
-      st.n = +b.dataset.xn; setPressed('[data-xn]', 'xn', st.n); newGame();
+      st.n = +b.dataset.xn; setPressed('[data-xn]', 'xn', st.n); fillKeySel(); newGame();
     }));
     $('xNew').addEventListener('click', newGame);
-    $('xAskBefore').addEventListener('click', () => ask('before'));
-    $('xAsk').addEventListener('click', () => ask('after'));
+    keySel.addEventListener('change', newGame);
+    $('xYes').addEventListener('click', () => answer(true));
+    $('xNo').addEventListener('click', () => answer(false));
     $('xDeclare').addEventListener('click', declare);
     $('xClearTable').addEventListener('click', () => { st.table[st.n] = {}; renderTable(); });
     $('xToTree').addEventListener('click', () => { shared.toTree = { n: st.n, key: st.over ? st.key : null }; });
+    fillKeySel();
     newGame();
   })();
 
