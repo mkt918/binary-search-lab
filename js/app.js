@@ -479,10 +479,11 @@
       keySel.value = st.key == null ? '' : st.key;
     }
     function renderNBoxes() {
+      const MAX = 16; // tN のスライダー上限。常に16枠を横1列で表示し、n個目までを色付け・残りは灰色にする
       nBoxes.replaceChildren();
-      nBoxes.style.setProperty('--n', Math.min(st.n, 8));
-      for (let i = 0; i < st.n; i++) {
-        const b = h('div', { class: 'box' }, String(i));
+      nBoxes.style.setProperty('--n', MAX);
+      for (let i = 0; i < MAX; i++) {
+        const b = h('div', { class: 'box' + (i >= st.n ? ' is-out' : '') }, String(i));
         b.style.cursor = 'default';
         nBoxes.append(b);
       }
