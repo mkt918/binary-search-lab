@@ -69,7 +69,7 @@
 <section class="page" id="page-birthday" data-page="birthday">
   <div class="page-head">
     <h2>誕生日当てクイズ</h2>
-    <p id="birthdayIntro">「〇月〇日より後ですか？」のように質問して、出た答えの範囲をカレンダーで選び、「消す」で候補から外していこう。</p>
+    <p id="birthdayIntro">「〇月〇日より後ですか？」のように質問して、出た答えで外れる範囲をカレンダーで選び、「消す」で候補から外していこう。1回の質問につき「消す」は1回。</p>
   </div>
 
   <div class="card">
@@ -80,7 +80,7 @@
 
     <div class="stats" style="margin-bottom: var(--space-sm); grid-template-columns: repeat(2, minmax(0, 1fr)) repeat(2, minmax(0, 1.2fr));">
       <div class="stat stat--key"><div class="stat__label">のこりの候補</div><div class="stat__value"><span id="bCount">365</span><small>日</small></div></div>
-      <div class="stat"><div class="stat__label">消した回数</div><div class="stat__value"><span id="bAsked">0</span><small>回</small></div></div>
+      <div class="stat"><div class="stat__label">質問回数</div><div class="stat__value"><span id="bAsked">0</span><small>回</small></div></div>
       <button class="btn btn--no" id="bErase" style="white-space: normal; min-width: 0; height: auto;">選んだ範囲を消す</button>
       <button class="btn btn--declare" id="bDeclare" style="white-space: normal; min-width: 0; height: auto;">…と宣言</button>
     </div>
@@ -122,7 +122,7 @@
       <h3>消した記録</h3>
       <div class="table-wrap">
         <table class="log">
-          <thead><tr><th class="num">回</th><th>消した範囲</th><th class="num">のこり</th></tr></thead>
+          <thead><tr><th class="num">質問</th><th>消した範囲</th><th class="num">のこり</th></tr></thead>
           <tbody id="bLog"><tr><td colspan="3" class="muted">まだ消していません</td></tr></tbody>
         </table>
       </div>
@@ -135,7 +135,7 @@
       <p class="muted" style="margin: var(--space-2xs) 0;">宣言が終わるとここに追加されます（この端末だけに保存）。</p>
       <div class="table-wrap">
         <table class="log">
-          <thead><tr><th class="num">#</th><th class="num">消した回数</th><th>結果</th></tr></thead>
+          <thead><tr><th class="num">#</th><th class="num">質問回数</th><th>結果</th></tr></thead>
           <tbody id="bRecords"></tbody>
         </table>
       </div>
@@ -147,7 +147,7 @@
 <section class="page" id="page-boxes" data-page="boxes">
   <div class="page-head">
     <h2>箱の鍵さがし</h2>
-    <p id="boxesIntro">どれか1つの箱に鍵が入っています。「〇番より後にありますか？」の質問に「はい／いいえ」で答えて絞りこもう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？</p>
+    <p id="boxesIntro">どれか1つの箱に鍵が入っています。「鍵は〇番より番号が大きいですか？」の質問に「はい／いいえ」で答えて絞りこもう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？</p>
   </div>
 
   <div class="grid-2">
@@ -158,6 +158,9 @@
             <button type="button" data-xn="4" aria-pressed="false">4個</button>
             <button type="button" data-xn="8" aria-pressed="true">8個</button>
             <button type="button" data-xn="16" aria-pressed="false">16個</button>
+            <button type="button" data-xn="32" aria-pressed="false">32個</button>
+            <button type="button" data-xn="64" aria-pressed="false">64個</button>
+            <button type="button" data-xn="100" aria-pressed="false">100個</button>
           </div>
           <button class="btn btn--sm" id="xNew">やりなおす</button>
         </div>
@@ -169,6 +172,8 @@
           <div class="stat"><div class="stat__label">質問した回数</div><div class="stat__value"><span id="xAsked">0</span><small>回</small></div></div>
         </div>
         <div class="boxes" id="xBoxes"></div>
+        <div class="strip hide" id="xStrip" aria-hidden="true"></div>
+        <div class="strip-labels hide" id="xStripLabels"><span id="xStripLo">0番</span><b id="xStripRange"></b><span id="xStripHi">99番</span></div>
         <p class="split__verdict" id="xVerdict" style="margin-top: var(--space-sm);">鍵は3番より番号が大きいですか？　<span class="muted">(mid &gt; 3)</span></p>
         <div class="row" style="margin-top: var(--space-sm);">
           <button class="btn btn--yes btn--big" id="xYes" disabled>はい</button>
@@ -195,6 +200,7 @@
         <table class="log">
           <thead><tr><th id="xTableHeadKey">鍵が入っていた箱</th><th class="num">あなたの回数</th></tr></thead>
           <tbody id="xTable"></tbody>
+          <tfoot id="xFoot"></tfoot>
         </table>
       </div>
       <div class="row" style="margin-top: var(--space-sm);">
@@ -329,35 +335,22 @@
         <div class="chain" id="sChain"></div>
       </div>
 
-      <div class="card">
-        <h3>2の累乗表</h3>
-        <p class="muted">n 以上になる最初の2の累乗を探そう。その「何回かけたか」が質問回数。</p>
-        <div class="pow" id="sPow" style="margin-top: var(--space-2xs);"></div>
-        <div class="logbox" style="margin-top: var(--space-sm);">
-          <b>ログ（log）</b>　「2を何回かけると n になるか」を表す数を <b>log₂n</b>（ログ2のn）と書きます。
-          例：2×2×2＝8 なので log₂8＝3。二分探索の質問回数は log₂n。
-          n が2の累乗でないときは、n を超える最初の2の累乗を探します（数学Ⅱで詳しく学びます）。
-        </div>
+      <div class="logbox">
+        <b>ログ（log）</b>　「2を何回かけると n になるか」を表す数を <b>log₂n</b>（ログ2のn）と書きます。
+        例：2×2×2＝8 なので log₂8＝3。二分探索の質問回数は log₂n。
+        n が2の累乗でないときは、n を超える最初の2の累乗を探します。
       </div>
     </div>
 
     <div class="stack">
       <div class="card">
         <div class="row" style="justify-content: space-between;">
-          <h3 style="margin: 0;">6 箱の数がn個のとき</h3>
-          <button class="btn btn--ghost btn--sm" data-reveal="s6">答えを全部表示</button>
+          <h3 style="margin: 0;">箱の数がn個の場合</h3>
+          <button class="btn btn--ghost btn--sm" data-reveal="sTable">答えを全部表示</button>
         </div>
-        <p class="muted" style="margin: var(--space-2xs) 0;">「？」をタップすると答えが出ます。</p>
-        <div class="table-wrap"><table class="log" id="s6"></table></div>
-        <p class="note">箱の数が2倍になると、質問回数は？</p>
-      </div>
-      <div class="card">
-        <div class="row" style="justify-content: space-between;">
-          <h3 style="margin: 0;">7 100個・1万個・100万個だと…？</h3>
-          <button class="btn btn--ghost btn--sm" data-reveal="s7">答えを全部表示</button>
-        </div>
-        <div class="table-wrap" style="margin-top: var(--space-2xs);"><table class="log" id="s7"></table></div>
-        <p class="note" id="s7Note">100個 → 100万個（1万倍）になっても、二分探索は 7回 → 20回（約3倍）。</p>
+        <p class="muted" style="margin: var(--space-2xs) 0;">必ず特定できる質問回数（最大の回数）。「？」をタップすると答えが出ます。</p>
+        <div class="table-wrap"><table class="log" id="sTable"></table></div>
+        <p class="note">箱の数が2倍になると、質問回数は？　100個 → 100万個（1万倍）になると？</p>
       </div>
       <div class="card card--tint">
         <h3>1回の質問に1秒かかるとしたら</h3>
@@ -386,7 +379,7 @@
       </div>
       <div class="card">
         <h3>豆知識：本物のプログラムの二分探索</h3>
-        <p class="script">実は、本物のプログラムの二分探索は、今日のルールとは少し違って、比較のたびに「これですか？」も一緒に確認しています。だから運がよければ1回で当たることもありますが、逆に今日より多く質問が必要になることもあります。今日は「比較だけをくり返して、最後に1回だけ宣言する」というルールにすることで、質問回数がきれいに log₂n に対応するようにしていました。</p>
+        <p class="script">実は、本物のプログラムの二分探索は、今日のルールとは少し違って、比較のたびに「これですか？」も一緒に確認しています。だから運がよければ1回で当たることもありますが、逆に今日より多く質問が必要になることもあります。今日は「比較だけをくり返して、最後に1回だけ宣言する」というルールにすることで、質問回数がきれいに log₂n に対応するようにしていました。また、二分探索が使えるのは、誕生日や箱の番号のように、データが順番に並んでいるときだけです。</p>
       </div>
     </div>
 

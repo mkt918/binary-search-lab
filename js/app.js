@@ -211,7 +211,7 @@
       if (st.over) {
         const n = st.hist.length;
         const b = h('div', { class: 'banner ' + (st.over.hit ? 'banner--ok' : 'banner--ng') });
-        if (st.over.hit) b.append(h('strong', { text: '当たり！ ' }), '消した回数 ' + n + ' 回で当てました。');
+        if (st.over.hit) b.append(h('strong', { text: '当たり！ ' }), '質問 ' + n + ' 回で当てました。');
         else b.append(h('strong', { text: 'はずれ… ' }), '宣言は1回だけ。');
         b.append(h('br'), '（ちょうど半分ずつ消せば、どの誕生日でも 9 回以内で必ず当たる）');
         res.append(b, h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: '次の人へ（はじめから）', onclick: reset })));
@@ -262,8 +262,10 @@
   const shared = { lastBox: null }; // 決定木ページへの受け渡し
 
   (function boxes() {
+    const BIG = 32; // これ以上は箱を並べず、帯（xStrip）で範囲だけを表示する
     const st = { n: 8, key: 0, lo: 0, hi: 7, sel: null, hist: [], over: null, table: {} };
-    const boxEls = [];
+    const boxEls = [], stripEls = [];
+    const isBig = () => st.n >= BIG;
     const keySel = $('xKeySel');
 
     function fillKeySel() {
@@ -282,12 +284,23 @@
       const wrap = $('xBoxes');
       wrap.replaceChildren(); boxEls.length = 0;
       wrap.style.setProperty('--n', Math.min(st.n, 8));
+      const strip = $('xStrip');
+      strip.replaceChildren(); stripEls.length = 0;
+      wrap.classList.toggle('hide', isBig());
+      strip.classList.toggle('hide', !isBig());
+      $('xStripLabels').classList.toggle('hide', !isBig());
+      $('xToTree').classList.toggle('hide', isBig()); // 決定木は16個まで
+      if (isBig()) {
+        $('xStripHi').textContent = (st.n - 1) + '番';
+        for (let i = 0; i < st.n; i++) { const s = h('span', { class: 'strip__s' }); stripEls.push(s); strip.append(s); }
+      }
+      if (!st.table[st.n]) st.table[st.n] = {};
+      if (isBig()) return;
       for (let i = 0; i < st.n; i++) {
         const b = h('button', { type: 'button', class: 'box', 'aria-label': i + '番の箱' }, String(i));
         b.addEventListener('click', () => { if (!st.over) { st.sel = i; render(); } });
         boxEls.push(b); wrap.append(b);
       }
-      if (!st.table[st.n]) st.table[st.n] = {};
     }
 
     function answer(isAfter) {
@@ -326,6 +339,13 @@
         }
         b.replaceChildren(String(i));
       });
+      stripEls.forEach((s, i) => {
+        const inR = i >= st.lo && i <= st.hi;
+        s.className = 'strip__s' + (st.over ? (i === st.key ? ' is-key' : ' is-out')
+          : !inR ? ' is-out' : count > 1 && i === q ? ' is-mid' : '');
+      });
+      if (isBig()) $('xStripRange').textContent = st.over ? '鍵は ' + st.key + '番'
+        : count === 1 ? st.lo + '番にしぼれた！' : 'のこり ' + st.lo + '〜' + st.hi + '番';
 
       const sel = st.sel;
       const verdict = $('xVerdict');
@@ -367,12 +387,16 @@
       const max = nums.length ? Math.max(...nums) : null;
       for (let k = 0; k < st.n; k++) {
         const v = t[k];
+        if (isBig() && v == null) continue; // 32個以上は試した箱だけ表示
         const tr = h('tr', {},
           h('td', { text: k + '番' }),
           h('td', { class: 'num', text: v == null ? '' : typeof v === 'number' ? v + '回' : v }));
         if (v != null && v === max) tr.classList.add('is-max');
         tb.append(tr);
       }
+      const foot = $('xFoot');
+      foot.replaceChildren();
+      if (nums.length) foot.append(h('tr', {}, h('th', { text: '平均' }), h('th', { class: 'num', text: (Math.round(nums.reduce((a, b) => a + b, 0) / nums.length * 100) / 100) + '回' })));
       const filled = Object.keys(t).length;
       $('xTableNote').textContent = filled
         ? filled + ' / ' + st.n + ' 個ためしました。' + (max != null ? 'あなたの最大は ' + max + ' 回。' : '')
@@ -564,6 +588,7 @@
       { v: 8, plain: '8' },
       { v: 16, plain: '16' },
       { v: 32, plain: '32' },
+      { v: 64, plain: '64' },
       { v: 100, plain: '100' },
       { v: 365, plain: '365（誕生日）' },
       { v: 10000, plain: '1万' },
@@ -572,13 +597,6 @@
     presetDefs.forEach(d => {
       $('sPresets').append(h('button', { class: 'btn btn--sm', type: 'button', text: d.plain, onclick: () => set(d.v, true) }));
     });
-
-    const pow = $('sPow');
-    const powEls = [];
-    for (let e = 1; e <= 20; e++) {
-      const c = h('div', { class: 'pow__c' }, h('div', { class: 'pow__e', text: '2の' + e + '乗' }), h('div', { class: 'pow__v', text: BS.formatNum(2 ** e) }));
-      powEls.push(c); pow.append(c);
-    }
 
     function set(n, fromOutside) {
       n = Math.max(1, Math.min(1e9, Math.round(n) || 1));
@@ -596,43 +614,25 @@
         chain.append(h('span', { class: 'c', text: BS.formatNum(c) }));
       });
       chain.append(h('span', { class: 'arr', text: '　（矢印の数＝' + q + '回）' }));
-      let hit = false;
-      powEls.forEach((c, i) => {
-        const p = 2 ** (i + 1);
-        const isHit = !hit && p >= n && n > 1;
-        if (isHit) hit = true;
-        c.classList.toggle('is-hit', isHit);
-        c.classList.toggle('is-under', p < n);
-      });
     }
 
     $('sN').addEventListener('input', e => set(+e.target.value || 1, false));
     $('sN').addEventListener('change', e => set(+e.target.value || 1, true));
     $('sSlider').addEventListener('input', e => { const n = Math.round(10 ** (+e.target.value / 1000 * MAXLOG)); $('sN').value = n; set(n, false); });
 
-    // ワークシートの表（タップで答え）
+    // ワークシートの表（タップで答え）。列の並び・線形探索の記入済み欄（2〜16）はワークシートと同じ
     const ans = v => h('td', { class: 'ans num' }, h('button', { type: 'button', 'aria-label': '答えを表示', 'data-v': v, onclick: e => { e.currentTarget.classList.add('is-shown'); e.currentTarget.textContent = v; } }));
-    const s6 = $('s6');
-    const ns6 = [2, 4, 8, 16, 32];
-    s6.append(h('thead', {}, h('tr', {}, h('th', { text: '箱の数 n' }), ...ns6.map(n => h('th', { class: 'num', text: n + '個' })))));
-    s6.append(h('tbody', {}, h('tr', {}, h('th', { text: '必要な質問回数' }), ...ns6.map(n => ans(BS.questionsNeeded(n) + '回')))));
-    const s7 = $('s7');
-    const ns7Defs = [
-      { v: 100, plain: '100個' },
-      { v: 10000, plain: '1万個' },
-      { v: 1000000, plain: '100万個' },
-      { v: 365, plain: '365個（誕生日）' },
+    const sTable = $('sTable');
+    const rowDefs = [
+      { v: 2, plain: '2' }, { v: 4, plain: '4' }, { v: 8, plain: '8' }, { v: 16, plain: '16' },
+      { v: 32, plain: '32' }, { v: 64, plain: '64' }, { v: 100, plain: '100' },
+      { v: 365, plain: '365（誕生日）' }, { v: 10000, plain: '1万' }, { v: 1000000, plain: '100万' },
     ];
-    function renderS7() {
-      s7.replaceChildren();
-      s7.append(h('thead', {}, h('tr', {}, h('th', { text: '' }),
-        ...ns7Defs.map(d => h('th', { class: 'num', style: 'white-space: pre-line;', text: d.plain })))));
-      s7.append(h('tbody', {},
-        h('tr', {}, h('th', { text: '線形探索（最大）' }), ...ns7Defs.map(d => ans(BS.formatNum(d.v) + '回'))),
-        h('tr', {}, h('th', { text: '二分探索' }), ...ns7Defs.map(d => ans(BS.questionsNeeded(d.v) + '回')))));
-      $('s7Note').textContent = '100個 → 100万個（1万倍）になっても、二分探索は 7回 → 20回（約3倍）。';
-    }
-    renderS7();
+    sTable.append(h('thead', {}, h('tr', {}, h('th', { text: '箱の数 n' }), h('th', { class: 'num', text: '必要な質問回数' }), h('th', { class: 'num', text: '線形探索' }))));
+    sTable.append(h('tbody', {}, ...rowDefs.map(d => h('tr', {},
+      h('th', { text: d.plain }),
+      ans(BS.questionsNeeded(d.v) + '回'),
+      d.v <= 16 ? h('td', { class: 'num', text: d.v + '回' }) : ans(BS.formatNum(d.v) + '回')))));
     document.querySelectorAll('[data-reveal]').forEach(b => b.addEventListener('click', () => {
       document.querySelectorAll('#' + b.dataset.reveal + ' .ans button').forEach(x => { x.classList.add('is-shown'); x.textContent = x.dataset.v; });
     }));

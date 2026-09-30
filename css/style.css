@@ -261,6 +261,14 @@ table.log tr.is-max td { background: var(--color-accent-wash); }
 .box.is-mid { border-style: dashed; border-color: var(--color-accent-2-deep); }
 .box__key { position: absolute; bottom: 6%; font-size: 0.55em; }
 @keyframes pop { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
+/* 32個以上は箱を並べず、細い帯で候補の範囲だけを見せる */
+.strip { display: flex; gap: 1px; height: 56px; border-radius: 12px; overflow: hidden; background: var(--color-paper-3); }
+.strip__s { flex: 1 1 0; min-width: 0; background: var(--color-accent); transition: background var(--dur-med) var(--ease-out); }
+.strip__s.is-out { background: var(--color-out); }
+.strip__s.is-mid { background: var(--color-accent-2-deep); }
+.strip__s.is-key { background: var(--color-accent-3); }
+.strip-labels { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-xs); margin-top: 4px; font-size: var(--text-sm); color: var(--color-ink-2); }
+.strip-labels b { color: var(--color-ink); font-size: var(--text-md); text-align: center; }
 .box-labels { display: grid; grid-template-columns: repeat(var(--n, 8), minmax(0, 1fr)); gap: clamp(4px, 1.2vw, 12px); font-size: var(--text-xs); color: var(--color-ink-2); text-align: center; }
 
 .race { display: grid; gap: var(--space-sm); }
@@ -310,14 +318,6 @@ table.log tr.is-max td { background: var(--color-accent-wash); }
 .chain span.c:last-child { background: var(--color-accent-3); color: var(--color-accent-3-ink); }
 .chain span.arr { color: var(--color-ink-3); font-size: var(--text-xs); }
 
-.pow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
-@media (min-width: 700px) { .pow { grid-template-columns: repeat(10, minmax(0, 1fr)); } }
-.pow__c { background: var(--color-paper-2); border-radius: 10px; padding: 4px 2px; text-align: center; min-width: 0; }
-.pow__e { font-size: var(--text-xs); color: var(--color-ink-2); font-weight: 700; }
-.pow__v { font-family: var(--font-num); font-weight: 700; font-size: var(--text-xs); overflow-wrap: anywhere; }
-.pow__c.is-under { background: var(--color-accent-2-soft); }
-.pow__c.is-hit { background: var(--color-accent-3); color: var(--color-accent-3-ink); }
-.pow__c.is-hit .pow__e { color: var(--color-accent-3-ink); }
 
 .presets { display: flex; flex-wrap: wrap; gap: 6px; }
 
