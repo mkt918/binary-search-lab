@@ -268,12 +268,12 @@
 
     function fillKeySel() {
       const cur = keySel.value;
-      keySel.replaceChildren(h('option', { value: 'r', text: 'ランダム（ひみつ）' }));
+      keySel.replaceChildren();
       for (let i = 0; i < st.n; i++) keySel.append(h('option', { value: String(i), text: i + '番' }));
-      keySel.value = (cur === 'r' || (cur !== '' && +cur < st.n)) ? cur : 'r';
+      keySel.value = (cur !== '' && +cur < st.n) ? cur : '0';
     }
     function newGame() {
-      const key = keySel.value === 'r' ? randInt(st.n) : +keySel.value;
+      const key = +keySel.value;
       Object.assign(st, { key, lo: 0, hi: st.n - 1, sel: null, hist: [], over: null });
       build();
       render();
@@ -648,83 +648,7 @@
   })();
 
   /* =========================================================
-   * 6 並びが大事
-   * ========================================================= */
-  (function sorted() {
-    const N = 8;
-    const st = { base: [], order: 'shuffle', arr: [], target: 0, steps: null, idx: 0 };
-    const cardEls = [];
-    const w = $('oCards');
-    for (let i = 0; i < N; i++) { const c = h('div', { class: 'ncard' }); cardEls.push(c); w.append(c); }
-
-    function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = randInt(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
-
-    function newCards() {
-      // バラバラのとき二分探索で見つからない数があるような並びを作る
-      for (let tries = 0; tries < 200; tries++) {
-        const set = new Set();
-        while (set.size < N) set.add(1 + randInt(99));
-        const vals = [...set];
-        const sh = shuffle(vals);
-        const fails = vals.filter(v => !BS.binarySearchSteps(sh, v).found);
-        if (fails.length) { st.base = sh; st.target = fails[randInt(fails.length)]; break; }
-      }
-      st.order = 'shuffle'; setPressed('[data-sorder]', 'sorder', 'shuffle');
-      fillTargets(); restart();
-    }
-    function fillTargets() {
-      const sel = $('oTarget');
-      sel.replaceChildren();
-      st.base.slice().sort((a, b) => a - b).forEach(v => sel.append(h('option', { value: v, text: v })));
-      sel.value = st.target;
-    }
-    function restart() {
-      st.arr = st.order === 'sorted' ? st.base.slice().sort((a, b) => a - b) : st.base.slice();
-      st.steps = BS.binarySearchSteps(st.arr, st.target);
-      st.idx = 0;
-      render();
-    }
-    function render() {
-      const cur = st.idx > 0 ? st.steps.steps[st.idx - 1] : null;
-      const done = st.idx >= st.steps.steps.length && st.idx > 0;
-      const trueIdx = st.arr.indexOf(st.target);
-      cardEls.forEach((c, i) => {
-        c.className = 'ncard';
-        c.textContent = st.arr[i];
-        if (i === trueIdx) c.classList.add('is-target');
-        if (cur) {
-          // 現在の比較のあとに残る範囲を表示
-          let lo = cur.lo, hi = cur.hi;
-          if (cur.cmp > 0) lo = cur.mid + 1; else if (cur.cmp < 0) hi = cur.mid - 1;
-          if (cur.cmp !== 0 && (i < lo || i > hi) && i !== cur.mid) c.classList.add('is-out');
-          if (i === cur.mid) c.classList.add(cur.cmp === 0 ? 'is-found' : 'is-mid');
-        }
-        if (done && !st.steps.found && i === trueIdx) c.classList.add('is-missed');
-      });
-      const msg = $('oMsg');
-      msg.replaceChildren();
-      $('oStep').disabled = done;
-      if (!cur) { msg.append(h('p', { class: 'muted', text: '「次の比較」を押すと、真ん中のカードとくらべていきます。探す数 ' + st.target + ' のカードには下に赤い線がついています。' })); return; }
-      const dir = cur.cmp > 0 ? '大きい → 右側だけ残す' : cur.cmp < 0 ? '小さい → 左側だけ残す' : '同じ！';
-      msg.append(h('p', { style: 'font-weight: 700;', text: st.idx + '回目：真ん中のカードは ' + cur.value + '。探す数 ' + st.target + ' は ' + cur.value + ' より ' + dir }));
-      if (done) {
-        const b = st.steps.found
-          ? h('div', { class: 'banner banner--ok' }, h('strong', { text: '見つかった！ ' }), st.steps.steps.length + '回の比較で見つかりました。')
-          : h('div', { class: 'banner banner--ng' }, h('strong', { text: '見つからない…！ ' }), st.target + ' は本当は左から' + (trueIdx + 1) + '枚目にあったのに、半分を捨てたときにいっしょに捨ててしまいました。',
-            st.order === 'shuffle' ? h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: '小さい順に並べてやり直す', onclick: () => { st.order = 'sorted'; setPressed('[data-sorder]', 'sorder', 'sorted'); restart(); } })) : null);
-        msg.append(b);
-      }
-    }
-    document.querySelectorAll('[data-sorder]').forEach(b => b.addEventListener('click', () => { st.order = b.dataset.sorder; setPressed('[data-sorder]', 'sorder', st.order); restart(); }));
-    $('oTarget').addEventListener('change', e => { st.target = +e.target.value; restart(); });
-    $('oStep').addEventListener('click', () => { if (st.idx < st.steps.steps.length) { st.idx++; render(); } });
-    $('oRestart').addEventListener('click', restart);
-    $('oNew').addEventListener('click', newCards);
-    newCards();
-  })();
-
-  /* =========================================================
-   * 7 まとめ・豆知識（一致確認あり方式）
+   * 6 まとめ・豆知識（一致確認あり方式）
    * ========================================================= */
   (function summary() {
     const N = 8;

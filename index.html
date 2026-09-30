@@ -27,8 +27,7 @@
     <a href="#linear"><span class="nav__step">3</span>線形探索と比較</a>
     <a href="#tree"><span class="nav__step">4</span>決定木</a>
     <a href="#scale"><span class="nav__step">5</span>n個・大きな数</a>
-    <a href="#sorted"><span class="nav__step">6</span>並びが大事</a>
-    <a href="#summary"><span class="nav__step">7</span>まとめ・豆知識</a>
+    <a href="#summary"><span class="nav__step">6</span>まとめ・豆知識</a>
   </nav>
 </header>
 
@@ -55,13 +54,12 @@
     <div class="card">
       <h3>授業の流れ</h3>
       <ol class="flow">
-        <li><a href="#birthday"><span class="flow__n">1</span><span class="flow__t">誕生日当てクイズ<small>全体 → グループで回数を記録</small></span><span class="flow__time">20分</span></a></li>
-        <li><a href="#boxes"><span class="flow__n">2</span><span class="flow__t">箱（0〜7番）の全パターン<small>どこに鍵があっても3回</small></span><span class="flow__time">8分</span></a></li>
-        <li><a href="#linear"><span class="flow__n">3</span><span class="flow__t">線形探索とくらべる<small>端から開けると最大8回</small></span><span class="flow__time">7分</span></a></li>
-        <li><a href="#tree"><span class="flow__n">4</span><span class="flow__t">決定木で全体を見る<small>質問の枝分かれ図</small></span><span class="flow__time">随時</span></a></li>
-        <li><a href="#scale"><span class="flow__n">5</span><span class="flow__t">n個・100万個だと…？<small>2倍で1回ふえる／log₂n</small></span><span class="flow__time">12分</span></a></li>
-        <li><a href="#sorted"><span class="flow__n">6</span><span class="flow__t">並んでいないと使えない<small>次時「整列」へ</small></span><span class="flow__time">まとめ</span></a></li>
-        <li><a href="#summary"><span class="flow__n">7</span><span class="flow__t">まとめ・豆知識<small>本物のプログラムとの違い</small></span><span class="flow__time">3分</span></a></li>
+        <li><a href="#birthday"><span class="flow__n">1</span><span class="flow__t">誕生日当てクイズ<small>全体 → グループで回数を記録</small></span></a></li>
+        <li><a href="#boxes"><span class="flow__n">2</span><span class="flow__t">箱（0〜7番）の全パターン<small>どこに鍵があっても3回</small></span></a></li>
+        <li><a href="#linear"><span class="flow__n">3</span><span class="flow__t">線形探索とくらべる<small>端から開けると最大8回</small></span></a></li>
+        <li><a href="#tree"><span class="flow__n">4</span><span class="flow__t">決定木で全体を見る<small>質問の枝分かれ図</small></span></a></li>
+        <li><a href="#scale"><span class="flow__n">5</span><span class="flow__t">n個・100万個だと…？<small>2倍で1回ふえる／log₂n</small></span></a></li>
+        <li><a href="#summary"><span class="flow__n">6</span><span class="flow__t">まとめ・豆知識<small>本物のプログラムとの違い</small></span></a></li>
       </ol>
     </div>
   </div>
@@ -70,7 +68,6 @@
 <!-- ============ 1 誕生日 ============ -->
 <section class="page" id="page-birthday" data-page="birthday">
   <div class="page-head">
-    <span class="step-tag">ワークシート 1・2・3</span>
     <h2>誕生日当てクイズ</h2>
     <p id="birthdayIntro">「〇月〇日より後ですか？」のように質問して、出た答えの範囲をカレンダーで選び、「消す」で候補から外していこう。</p>
   </div>
@@ -149,7 +146,6 @@
 <!-- ============ 2 箱 ============ -->
 <section class="page" id="page-boxes" data-page="boxes">
   <div class="page-head">
-    <span class="step-tag">ワークシート 4</span>
     <h2>箱の鍵さがし</h2>
     <p id="boxesIntro">どれか1つの箱に鍵が入っています。「〇番より後にありますか？」の質問に「はい／いいえ」で答えて絞りこもう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？</p>
   </div>
@@ -212,7 +208,6 @@
 <!-- ============ 3 線形 ============ -->
 <section class="page" id="page-linear" data-page="linear">
   <div class="page-head">
-    <span class="step-tag">ワークシート 5</span>
     <h2>線形探索とくらべよう</h2>
     <p id="linearIntro">同じ8個の箱を、0番から順番に開けて調べるのが<b>線形探索</b>。同じ場所に鍵をかくして、二分探索と同時にスタートしてみよう。</p>
   </div>
@@ -302,7 +297,6 @@
 <!-- ============ 5 スケール ============ -->
 <section class="page" id="page-scale" data-page="scale">
   <div class="page-head">
-    <span class="step-tag">ワークシート 6・7</span>
     <h2>箱がn個なら？ 100万個なら？</h2>
     <p>箱の数を変えて、必ず当てられる質問回数を調べよう。2倍になると回数はどう変わる？</p>
   </div>
@@ -373,50 +367,9 @@
   </div>
 </section>
 
-<!-- ============ 6 並び ============ -->
-<section class="page" id="page-sorted" data-page="sorted">
-  <div class="page-head">
-    <span class="step-tag">まとめ・次時へ</span>
-    <h2>並んでいないと、二分探索は使えない</h2>
-    <p id="sortedIntro">カードに数が書いてあります。真ん中のカードとくらべて「探す数のほうが大きいから右半分へ」と進めるのが二分探索。数がバラバラに並んでいたら、どうなるかな？</p>
-  </div>
-
-  <div class="grid-2">
-    <div class="card">
-      <div class="row" style="justify-content: space-between; margin-bottom: var(--space-sm);">
-        <div class="seg" role="group" aria-label="並び">
-          <button type="button" data-sorder="shuffle" aria-pressed="true">バラバラ</button>
-          <button type="button" data-sorder="sorted" aria-pressed="false">小さい順に並べる</button>
-        </div>
-        <button class="btn btn--sm" id="oNew">新しいカード</button>
-      </div>
-      <div class="row" style="margin-bottom: var(--space-sm);">
-        <label class="field"><span id="oTargetLabel">探す数</span> <select id="oTarget"></select></label>
-      </div>
-      <div class="cards" id="oCards"></div>
-      <div class="row" style="margin-top: var(--space-sm);">
-        <button class="btn btn--primary" id="oStep">次の比較</button>
-        <button class="btn btn--ghost btn--sm" id="oRestart">最初から</button>
-      </div>
-      <div id="oMsg" style="margin-top: var(--space-sm);"></div>
-    </div>
-
-    <div class="card card--tint">
-      <h3>わかったこと</h3>
-      <ul class="keypoints">
-        <li>二分探索は「真ん中より大きいなら、答えは右側にある」と<b>決めつけて</b>半分を捨てている。</li>
-        <li>その決めつけが正しいのは、データが<b>小さい順（大きい順）に並んでいるとき</b>だけ。</li>
-        <li>誕生日や箱の番号は、もともと順番に並んでいたから二分探索が使えた。</li>
-        <li>バラバラのデータで二分探索を使うには、先に<b>並べ替え（整列）</b>が必要 → 次の時間！</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ============ 7 まとめ ============ -->
+<!-- ============ 6 まとめ ============ -->
 <section class="page" id="page-summary" data-page="summary">
   <div class="page-head">
-    <span class="step-tag">ワークシート 8</span>
     <h2>まとめ・豆知識</h2>
   </div>
 
@@ -441,12 +394,12 @@
       <h3>2つの方式をくらべる（箱0〜7番）</h3>
       <div class="table-wrap">
         <table class="log">
-          <thead><tr><th>鍵の箱</th><th class="num">今日のルール<br><span class="muted">比較だけ＋最後に宣言</span></th><th class="num">本物のプログラム<br><span class="muted">毎回「これですか？」も確認</span></th></tr></thead>
+          <thead><tr><th>鍵の箱</th><th class="num">今日の<br>ルール</th><th class="num">本物の<br>プログラム</th></tr></thead>
           <tbody id="mTable"></tbody>
           <tfoot id="mFoot"></tfoot>
         </table>
       </div>
-      <p class="note">本物のプログラム方式：真ん中の箱と比べて「同じ／前／後」を1回で調べ、同じならその場で終了。</p>
+      <p class="note">今日のルール：比較だけをくり返し、最後に1回だけ宣言。本物のプログラム：真ん中の箱と比べて「同じ／前／後」を1回で調べ、同じならその場で終了。</p>
     </div>
   </div>
 
