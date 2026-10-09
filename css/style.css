@@ -188,8 +188,6 @@ table.log tr.is-max td { background: var(--color-accent-wash); }
 /* ---------- home ---------- */
 
 .hero { padding: var(--space-lg) 0 var(--space-md); display: grid; gap: var(--space-sm); }
-.hero h1 { font-size: var(--text-display); font-weight: 800; letter-spacing: -0.01em; }
-.hero h1 .hl { background: linear-gradient(transparent 62%, var(--color-accent) 62%); padding: 0 4px; }
 .hero p { font-size: var(--text-lg); color: var(--color-ink-2); max-width: 40ch; }
 .rules { display: grid; gap: var(--space-xs); padding: 0; margin: 0; list-style: none; counter-reset: rule; }
 .rules li { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: var(--space-xs); align-items: start; }
