@@ -374,7 +374,7 @@
         b.className = 'box';
         const inR = i >= st.lo && i <= st.hi;
         const kids = [String(i)];
-        if (i === st.key) kids.push(h('span', { class: 'box__key', text: '🔑' })); // 鍵のある箱には常に🔑
+        if (i === st.key) { kids.push(h('span', { class: 'box__key', text: '🔑' })); b.classList.add('has-key'); } // 鍵のある箱には常に🔑（白地）
         if (st.over) {
           if (i === st.key) b.classList.add('is-key');
           else if (i === st.over.pick) b.classList.add('is-open');
