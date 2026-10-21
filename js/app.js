@@ -301,15 +301,19 @@
   (function boxes() {
     const BIG = 32; // これ以上は箱を並べず、帯（xStrip）で範囲だけを表示する
     const st = { n: 8, key: 0, lo: 0, hi: 7, sel: null, hist: [], over: null, table: {} };
-    const boxEls = [], stripEls = [];
+    const boxEls = [], stripEls = [], calEls = [];
     let xBracket = null;
+    st.bday = false; // 365（誕生日）：箱の代わりに誕生日当てと同じカレンダー表を使う
     const isBig = () => st.n >= BIG;
+    const lab = i => (st.bday ? BS.dayLabel(i) : i + '番');
+    const rangeLab = (a, b) => (a === b ? lab(a) : st.bday ? lab(a) + '〜' + lab(b) : a + '〜' + b + '番');
+    const tk = () => (st.bday ? 'bday' : st.n);
     const keySel = $('xKeySel');
 
     function fillKeySel() {
       const cur = keySel.value;
       keySel.replaceChildren();
-      for (let i = 0; i < st.n; i++) keySel.append(h('option', { value: String(i), text: i + '番' }));
+      for (let i = 0; i < st.n; i++) keySel.append(h('option', { value: String(i), text: lab(i) }));
       keySel.value = (cur !== '' && +cur < st.n) ? cur : '0';
     }
     function newGame() {
@@ -329,11 +333,29 @@
       $('xStripLabels').classList.toggle('hide', !isBig());
       $('xStripKey').classList.toggle('hide', !isBig());
       $('xToTree').classList.toggle('hide', isBig()); // 決定木は16個まで
+      const xCal = $('xCal');
+      xCal.replaceChildren(); calEls.length = 0;
+      strip.classList.toggle('hide', !isBig() || st.bday);
+      $('xCalWrap').classList.toggle('hide', !st.bday);
+      $('xTableHeadKey').textContent = st.bday ? '誕生日（鍵の日）' : '鍵が入っていた箱';
       if (isBig()) {
-        $('xStripHi').textContent = (st.n - 1) + '番';
-        for (let i = 0; i < st.n; i++) { const s = h('span', { class: 'strip__s' }); stripEls.push(s); strip.append(s); }
+        $('xStripLo').textContent = lab(0);
+        $('xStripHi').textContent = lab(st.n - 1);
+        if (st.bday) {
+          for (let m = 1; m <= 12; m++) {
+            const row = h('div', { class: 'cal__row' }, h('span', { class: 'cal__m', text: m + '月' }));
+            for (let d = 1; d <= 31; d++) {
+              if (d > BS.MONTH_DAYS[m - 1]) { row.append(h('span', { class: 'cal__d cal__d--none' })); continue; }
+              const c = h('span', { class: 'cal__d cal__d--static', title: m + '月' + d + '日', text: String(d) });
+              calEls[BS.dateToDay(m, d)] = c; row.append(c);
+            }
+            xCal.append(row);
+          }
+        } else {
+          for (let i = 0; i < st.n; i++) { const s = h('span', { class: 'strip__s' }); stripEls.push(s); strip.append(s); }
+        }
       }
-      if (!st.table[st.n]) st.table[st.n] = {};
+      if (!st.table[tk()]) st.table[tk()] = {};
       if (isBig()) return;
       for (let i = 0; i < st.n; i++) {
         const b = h('button', { type: 'button', class: 'box', 'aria-label': i + '番の箱' }, String(i));
@@ -355,8 +377,8 @@
     function finish() {
       const hit = st.lo === st.key;
       st.over = { hit, pick: st.lo };
-      st.table[st.n][st.key] = hit ? st.hist.length : '失敗';
-      shared.lastBox = { n: st.n, key: st.key };
+      st.table[tk()][st.key] = hit ? st.hist.length : '失敗';
+      if (!st.bday) shared.lastBox = { n: st.n, key: st.key };
       render();
     }
 
@@ -367,7 +389,7 @@
       $('xAsked').textContent = st.hist.length;
       // 質問「鍵は（q+1〜hi番）の中にありますか？」：赤い線で左右に分け、右側を青い枠でくくる
       const asking = !st.over && count > 1;
-      const rightLabel = (q + 1 === st.hi ? st.hi : (q + 1) + '〜' + st.hi) + '番';
+      const rightLabel = rangeLab(q + 1, st.hi);
       boxEls.forEach((b, i) => {
         b.className = 'box';
         const inR = i >= st.lo && i <= st.hi;
@@ -394,10 +416,18 @@
         s.className = 'strip__s' + (st.over ? (i === st.key ? ' is-key' : ' is-out')
           : !inR ? ' is-out' : asking && i > q ? (i === q + 1 ? ' is-right is-split-right' : ' is-right') : '');
       });
+      calEls.forEach((c, i) => {
+        const inR = i >= st.lo && i <= st.hi;
+        const isKey = i === st.key;
+        c.className = 'cal__d cal__d--static'
+          + (st.over ? (isKey ? ' is-answer' : ' is-out') : !inR ? ' is-out' : asking && i > q ? ' is-right' : '')
+          + (asking && i === q + 1 ? ' is-split-right' : '') + (isKey ? ' has-key' : '');
+        c.textContent = isKey ? '🔑' : String(BS.dayToDate(i).d);
+      });
       if (isBig()) {
-        $('xStripRange').textContent = st.over ? '鍵は ' + st.key + '番'
-          : count === 1 ? st.lo + '番にしぼれた！' : 'のこり ' + st.lo + '〜' + st.hi + '番';
-        $('xStripKey').textContent = '🔑 鍵は ' + st.key + '番にあります';
+        $('xStripRange').textContent = st.over ? '鍵は ' + lab(st.key)
+          : count === 1 ? lab(st.lo) + 'にしぼれた！' : 'のこり ' + rangeLab(st.lo, st.hi);
+        $('xStripKey').textContent = '🔑 鍵は ' + lab(st.key) + ' にあります';
       }
 
       const verdict = $('xVerdict');
@@ -412,8 +442,8 @@
       res.replaceChildren();
       if (st.over) {
         const b = h('div', { class: 'banner ' + (st.over.hit ? 'banner--ok' : 'banner--ng') });
-        if (st.over.hit) b.append(h('strong', { text: '見つけた！ ' }), '質問 ' + st.hist.length + ' 回で ' + st.key + '番の鍵を見つけました。');
-        else b.append(h('strong', { text: 'はずれ… ' }), '鍵は ' + st.key + '番にありました。');
+        if (st.over.hit) b.append(h('strong', { text: '見つけた！ ' }), '質問 ' + st.hist.length + ' 回で ' + lab(st.key) + 'の鍵を見つけました。');
+        else b.append(h('strong', { text: 'はずれ… ' }), '鍵は ' + lab(st.key) + 'にありました。');
         res.append(b, h('div', { class: 'row', style: 'margin-top: var(--space-2xs);' }, h('button', { class: 'btn btn--primary', text: 'もう一回（鍵をかくし直す）', onclick: newGame })));
       }
 
@@ -422,8 +452,8 @@
       if (!st.hist.length) log.append(h('li', { text: 'まだ質問していません' }));
       st.hist.forEach(s => {
         const r = BS.applyAnswer(s.lo, s.hi, s.q, s.isAfter);
-        log.append(h('li', {}, '鍵は' + (s.q + 1 === s.hi ? s.hi : (s.q + 1) + '〜' + s.hi) + '番の中にある？ → ',h('span', { class: 'tag ' + (s.isAfter ? 'tag--yes' : 'tag--no'), text: s.isAfter ? 'はい' : 'いいえ' }),
-          '　のこり ' + (r.lo === r.hi ? r.lo + '番' : r.lo + '〜' + r.hi + '番') + '（' + (r.hi - r.lo + 1) + '個）'));
+        log.append(h('li', {}, '鍵は' + rangeLab(s.q + 1, s.hi) + 'の中にある？ → ',h('span', { class: 'tag ' + (s.isAfter ? 'tag--yes' : 'tag--no'), text: s.isAfter ? 'はい' : 'いいえ' }),
+          '　のこり ' + rangeLab(r.lo, r.hi) + '（' + (r.hi - r.lo + 1) + '個）'));
       });
       renderTable();
     }
@@ -431,14 +461,14 @@
     function renderTable() {
       const tb = $('xTable');
       tb.replaceChildren();
-      const t = st.table[st.n] || {};
+      const t = st.table[tk()] || {};
       const nums = Object.values(t).filter(v => typeof v === 'number');
       const max = nums.length ? Math.max(...nums) : null;
       for (let k = 0; k < st.n; k++) {
         const v = t[k];
         if (isBig() && v == null) continue; // 32個以上は試した箱だけ表示
         const tr = h('tr', {},
-          h('td', { text: k + '番' }),
+          h('td', { text: lab(k) }),
           h('td', { class: 'num', text: v == null ? '' : typeof v === 'number' ? v + '回' : v }));
         if (v != null && v === max) tr.classList.add('is-max');
         tb.append(tr);
@@ -453,13 +483,14 @@
     }
 
     document.querySelectorAll('[data-xn]').forEach(b => b.addEventListener('click', () => {
-      st.n = +b.dataset.xn; setPressed('[data-xn]', 'xn', st.n); fillKeySel(); newGame();
+      st.bday = b.dataset.xn === 'bday'; st.n = st.bday ? 365 : +b.dataset.xn;
+      setPressed('[data-xn]', 'xn', st.bday ? 'bday' : st.n); fillKeySel(); newGame();
     }));
     $('xNew').addEventListener('click', newGame);
     keySel.addEventListener('change', newGame);
     $('xYes').addEventListener('click', () => answer(true));
     $('xNo').addEventListener('click', () => answer(false));
-    $('xClearTable').addEventListener('click', () => { st.table[st.n] = {}; renderTable(); });
+    $('xClearTable').addEventListener('click', () => { st.table[tk()] = {}; renderTable(); });
     $('xToTree').addEventListener('click', () => { shared.toTree = { n: st.n, key: st.over ? st.key : null }; });
     fillKeySel();
     newGame();
