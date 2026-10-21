@@ -234,7 +234,7 @@ table.log tr.is-max td { background: var(--color-accent-wash); }
 
 /* ---------- boxes ---------- */
 
-.boxes { display: grid; grid-template-columns: repeat(var(--n, 8), minmax(0, 1fr)); gap: clamp(4px, 1.2vw, 12px); }
+.boxes { --gap: clamp(4px, 1.2vw, 12px); display: grid; grid-template-columns: repeat(var(--n, 8), minmax(0, 1fr)); gap: var(--gap); }
 .boxes--wrap { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 .boxes--tap { display: flex; overflow-x: auto; padding-bottom: 4px; }
 .boxes--tap .box { flex: 0 0 var(--tap); }
@@ -257,14 +257,29 @@ table.log tr.is-max td { background: var(--color-accent-wash); }
 .box.is-open { background: var(--color-surface); border-color: var(--color-ink-3); color: var(--color-ink-3); }
 .box.is-open::before { display: none; }
 .box.is-key { background: var(--color-accent-3); border-color: var(--color-accent-3-deep); color: var(--color-accent-3-ink); animation: pop var(--dur-long) var(--ease-spring); }
-.box.is-mid { border-style: dashed; border-color: var(--color-accent-2-deep); }
-.box__key { position: absolute; bottom: 6%; font-size: 0.55em; }
+/* 質問中：赤い線で左右に分け、右側（「ここにある？」）を青でくくる */
+.box.is-right { border-color: var(--color-accent-2-deep); }
+.box.is-split-right::after {
+  content: ""; position: absolute; left: calc(var(--gap) / -2 - 2.5px); top: -14%; bottom: -14%; width: 5px;
+  border-radius: 3px; background: var(--color-accent-3-deep); z-index: 2; pointer-events: none;
+}
+.bracket {
+  height: 14px; margin-top: 2px; border: 3px solid var(--color-accent-2-deep); border-top: 0; border-radius: 0 0 10px 10px;
+  position: relative;
+}
+.bracket span {
+  position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: 2px; white-space: nowrap;
+  font-size: var(--text-xs); font-weight: 800; color: var(--color-accent-2-deep);
+}
+.ask-range { color: var(--color-accent-2-deep); }
+.box__key { position: absolute; bottom: 6%; font-size: 0.6em; }
 @keyframes pop { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
 /* 32個以上は箱を並べず、細い帯で候補の範囲だけを見せる */
 .strip { display: flex; gap: 1px; height: 56px; border-radius: 12px; overflow: hidden; background: var(--color-paper-3); }
 .strip__s { flex: 1 1 0; min-width: 0; background: var(--color-accent); transition: background var(--dur-med) var(--ease-out); }
 .strip__s.is-out { background: var(--color-out); }
-.strip__s.is-mid { background: var(--color-accent-2-deep); }
+.strip__s.is-right { background: var(--color-accent-2-soft); }
+.strip__s.is-split-right { box-shadow: inset 4px 0 0 var(--color-accent-3-deep); }
 .strip__s.is-key { background: var(--color-accent-3); }
 .strip-labels { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-xs); margin-top: 4px; font-size: var(--text-sm); color: var(--color-ink-2); }
 .strip-labels b { color: var(--color-ink); font-size: var(--text-md); text-align: center; }

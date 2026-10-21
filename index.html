@@ -77,9 +77,8 @@
       <button class="btn btn--sm" id="bReset">はじめから</button>
     </div>
 
-    <div class="stats" style="margin-bottom: var(--space-sm); grid-template-columns: repeat(2, minmax(0, 1fr)) repeat(2, minmax(0, 1.2fr));">
+    <div class="stats" style="margin-bottom: var(--space-sm); grid-template-columns: minmax(0, 1fr) repeat(2, minmax(0, 1.2fr));">
       <div class="stat stat--key"><div class="stat__label">のこりの候補</div><div class="stat__value"><span id="bCount">365</span><small>日</small></div></div>
-      <div class="stat"><div class="stat__label">質問回数</div><div class="stat__value"><span id="bAsked">0</span><small>回</small></div></div>
       <button class="btn btn--no" id="bErase" style="white-space: normal; min-width: 0; height: auto;">選んだ範囲を消す</button>
       <button class="btn btn--declare" id="bDeclare" style="white-space: normal; min-width: 0; height: auto;">…と宣言</button>
     </div>
@@ -112,6 +111,8 @@
       <span class="muted">かんたん選択：</span>
       <button class="btn btn--ghost btn--sm" id="bSelOdd">奇数の日をすべて選ぶ</button>
       <button class="btn btn--ghost btn--sm" id="bSelEven">偶数の日をすべて選ぶ</button>
+      <button class="btn btn--ghost btn--sm" id="bSelOddM">奇数月をすべて選ぶ</button>
+      <button class="btn btn--ghost btn--sm" id="bSelEvenM">偶数月をすべて選ぶ</button>
     </div>
 
     <p class="muted" id="bDeclareHint" style="margin-top: var(--space-sm);">候補が1つになったら宣言しよう。まだ候補が多いうちに宣言するのは運まかせ！</p>
@@ -153,7 +154,7 @@
 <section class="page" id="page-boxes" data-page="boxes">
   <div class="page-head">
     <h2>箱の鍵さがし</h2>
-    <p id="boxesIntro">どれか1つの箱に鍵が入っています。「鍵は〇番より番号が大きいですか？」の質問に「はい／いいえ」で答えて絞りこもう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？</p>
+    <p id="boxesIntro">どれか1つの箱に鍵が入っています。赤い線で左右に分けて「鍵は青い枠の中にありますか？」と聞くので、「はい／いいえ」で答えて絞りこもう。鍵がどの箱でも、ちょうど半分に分ければ同じ回数で見つかるかな？</p>
   </div>
 
   <div class="grid-2">
@@ -180,7 +181,8 @@
         <div class="boxes" id="xBoxes"></div>
         <div class="strip hide" id="xStrip" aria-hidden="true"></div>
         <div class="strip-labels hide" id="xStripLabels"><span id="xStripLo">0番</span><b id="xStripRange"></b><span id="xStripHi">99番</span></div>
-        <p class="split__verdict" id="xVerdict" style="margin-top: var(--space-sm);">鍵は3番より番号が大きいですか？　<span class="muted">(mid &gt; 3)</span></p>
+        <p class="muted hide" id="xStripKey" style="margin-top: var(--space-2xs);"></p>
+        <p class="split__verdict" id="xVerdict" style="margin-top: var(--space-sm);">鍵は <b class="ask-range">4〜7番</b> の中にありますか？　<span class="muted">(mid &gt; 3)</span></p>
         <div class="row" style="margin-top: var(--space-sm);">
           <button class="btn btn--yes btn--big" id="xYes" disabled>はい</button>
           <button class="btn btn--no btn--big" id="xNo" disabled>いいえ</button>

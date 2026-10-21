@@ -105,6 +105,17 @@
       st.selKind = parity;
       render();
     }
+    // 奇数月／偶数月をすべて選ぶ
+    function selectMonthParity(parity) {
+      if (st.over) return;
+      st.sel = new Set();
+      for (let day = 0; day < N; day++) {
+        const { m } = BS.dayToDate(day);
+        if ((m % 2 === 1) === (parity === 'odd')) st.sel.add(day);
+      }
+      st.selKind = parity + 'Month';
+      render();
+    }
     function clearSelection() { st.sel = new Set(); st.selKind = null; render(); }
     cal.addEventListener('pointerdown', e => {
       const el = cellAtPoint(e.clientX, e.clientY);
@@ -138,6 +149,8 @@
       const days = [...st.sel].sort((a, b) => a - b);
       if (st.selKind === 'odd') return '奇数の日';
       if (st.selKind === 'even') return '偶数の日';
+      if (st.selKind === 'oddMonth') return '奇数月';
+      if (st.selKind === 'evenMonth') return '偶数月';
       if (st.selKind === 'rect' && days.length > 1) {
         const r = st.rect;
         return (r.m1 === r.m2 ? r.m1 + '月' : r.m1 + '〜' + r.m2 + '月') + 'の' + (r.d1 === r.d2 ? r.d1 + '日' : r.d1 + '〜' + r.d2 + '日');
@@ -196,7 +209,6 @@
     function render() {
       const env = remainingEnvelope();
       $('bCount').textContent = env.count;
-      $('bAsked').textContent = st.hist.length;
       $('bRange').textContent = env.count === 0 ? '候補がありません'
         : env.count === 1 ? BS.dayLabel(env.min) + ' にしぼれた！'
         : env.contiguous ? BS.dayLabel(env.min) + ' 〜 ' + BS.dayLabel(env.max)
@@ -268,6 +280,8 @@
     $('bClearSel').addEventListener('click', clearSelection);
     $('bSelOdd').addEventListener('click', () => selectParity('odd'));
     $('bSelEven').addEventListener('click', () => selectParity('even'));
+    $('bSelOddM').addEventListener('click', () => selectMonthParity('odd'));
+    $('bSelEvenM').addEventListener('click', () => selectMonthParity('even'));
     $('bDeclare').addEventListener('click', declare);
     $('bHit').addEventListener('click', () => finish(true));
     $('bMiss').addEventListener('click', () => finish(false));
@@ -288,6 +302,7 @@
     const BIG = 32; // これ以上は箱を並べず、帯（xStrip）で範囲だけを表示する
     const st = { n: 8, key: 0, lo: 0, hi: 7, sel: null, hist: [], over: null, table: {} };
     const boxEls = [], stripEls = [];
+    let xBracket = null;
     const isBig = () => st.n >= BIG;
     const keySel = $('xKeySel');
 
@@ -312,6 +327,7 @@
       wrap.classList.toggle('hide', isBig());
       strip.classList.toggle('hide', !isBig());
       $('xStripLabels').classList.toggle('hide', !isBig());
+      $('xStripKey').classList.toggle('hide', !isBig());
       $('xToTree').classList.toggle('hide', isBig()); // 決定木は16個まで
       if (isBig()) {
         $('xStripHi').textContent = (st.n - 1) + '番';
@@ -324,6 +340,9 @@
         b.addEventListener('click', () => { if (!st.over) { st.sel = i; render(); } });
         boxEls.push(b); wrap.append(b);
       }
+      // 右側の範囲をくくる枠（2行目に置く）
+      xBracket = h('div', { class: 'bracket', style: 'grid-row: 2;', 'aria-hidden': 'true' }, h('span', { text: 'ここにある？' }));
+      wrap.append(xBracket);
     }
 
     function answer(isAfter) {
@@ -348,34 +367,47 @@
       const q = BS.halfSplit(st.lo, st.hi);
       $('xCount').textContent = count;
       $('xAsked').textContent = st.hist.length;
+      // 質問「鍵は（q+1〜hi番）の中にありますか？」：赤い線で左右に分け、右側を青い枠でくくる
+      const asking = !st.over && count > 1;
+      const rightLabel = (q + 1 === st.hi ? st.hi : (q + 1) + '〜' + st.hi) + '番';
       boxEls.forEach((b, i) => {
         b.className = 'box';
         const inR = i >= st.lo && i <= st.hi;
+        const kids = [String(i)];
+        if (i === st.key) kids.push(h('span', { class: 'box__key', text: '🔑' })); // 鍵のある箱には常に🔑
         if (st.over) {
-          if (i === st.key) { b.classList.add('is-key'); b.replaceChildren(String(i), h('span', { class: 'box__key', text: '🔑' })); return; }
-          if (i === st.over.pick) b.classList.add('is-open');
+          if (i === st.key) b.classList.add('is-key');
+          else if (i === st.over.pick) b.classList.add('is-open');
           else if (!inR) b.classList.add('is-out');
         } else {
           if (!inR) b.classList.add('is-out');
           if (i === st.sel) b.classList.add('is-selected');
-          if (count > 1 && i === q) b.classList.add('is-mid');
+          if (asking && i > q && i <= st.hi) b.classList.add('is-right');
+          if (asking && i === q + 1) b.classList.add('is-split-right');
         }
-        b.replaceChildren(String(i));
+        b.replaceChildren(...kids);
       });
+      if (xBracket) {
+        xBracket.classList.toggle('hide', !asking || isBig());
+        if (asking) xBracket.style.gridColumn = (q + 2) + ' / ' + (st.hi + 2);
+      }
       stripEls.forEach((s, i) => {
         const inR = i >= st.lo && i <= st.hi;
         s.className = 'strip__s' + (st.over ? (i === st.key ? ' is-key' : ' is-out')
-          : !inR ? ' is-out' : count > 1 && i === q ? ' is-mid' : '');
+          : !inR ? ' is-out' : asking && i > q ? (i === q + 1 ? ' is-right is-split-right' : ' is-right') : '');
       });
-      if (isBig()) $('xStripRange').textContent = st.over ? '鍵は ' + st.key + '番'
-        : count === 1 ? st.lo + '番にしぼれた！' : 'のこり ' + st.lo + '〜' + st.hi + '番';
+      if (isBig()) {
+        $('xStripRange').textContent = st.over ? '鍵は ' + st.key + '番'
+          : count === 1 ? st.lo + '番にしぼれた！' : 'のこり ' + st.lo + '〜' + st.hi + '番';
+        $('xStripKey').textContent = '🔑 鍵は ' + st.key + '番にあります';
+      }
 
       const sel = st.sel;
       const verdict = $('xVerdict');
       verdict.replaceChildren();
       if (!st.over) {
         if (count === 1) verdict.append('候補は1つ。宣言しよう！');
-        else verdict.append('鍵は' + q + '番より番号が大きいですか？　', h('span', { class: 'muted', text: '(mid > ' + q + ')' }));
+        else verdict.append('鍵は ', h('b', { class: 'ask-range', text: rightLabel }), ' の中にありますか？　', h('span', { class: 'muted', text: '(mid > ' + q + ')' }));
       }
       $('xYes').disabled = !!st.over || count === 1;
       $('xNo').disabled = !!st.over || count === 1;
@@ -396,7 +428,7 @@
       if (!st.hist.length) log.append(h('li', { text: 'まだ質問していません' }));
       st.hist.forEach(s => {
         const r = BS.applyAnswer(s.lo, s.hi, s.q, s.isAfter);
-        log.append(h('li', {}, '鍵は' + s.q + '番より番号が大きい？ → ', h('span', { class: 'tag ' + (s.isAfter ? 'tag--yes' : 'tag--no'), text: s.isAfter ? 'はい' : 'いいえ' }),
+        log.append(h('li', {}, '鍵は' + (s.q + 1 === s.hi ? s.hi : (s.q + 1) + '〜' + s.hi) + '番の中にある？ → ',h('span', { class: 'tag ' + (s.isAfter ? 'tag--yes' : 'tag--no'), text: s.isAfter ? 'はい' : 'いいえ' }),
           '　のこり ' + (r.lo === r.hi ? r.lo + '番' : r.lo + '〜' + r.hi + '番') + '（' + (r.hi - r.lo + 1) + '個）'));
       });
       renderTable();
