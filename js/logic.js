@@ -107,6 +107,17 @@
   }
   function dayLabel(i) { const t = dayToDate(i); return t.m + '月' + t.d + '日'; }
 
+  /** 四角（縦）選択：月の範囲 × 日の範囲に含まれる通し日番号の配列（存在しない日は除く）。 */
+  function rectDays(m1, d1, m2, d2) {
+    const days = [];
+    for (let m = Math.min(m1, m2); m <= Math.max(m1, m2); m++) {
+      for (let d = Math.min(d1, d2); d <= Math.max(d1, d2); d++) {
+        if (d <= MONTH_DAYS[m - 1]) days.push(dateToDay(m, d));
+      }
+    }
+    return days;
+  }
+
   /* ---------- その他 ---------- */
 
   /** 並びに関係なく「二分探索の手順」を実行する（整列の前提を確かめるデモ用）。 */
@@ -137,7 +148,7 @@
   const api = {
     questionsNeeded, halfSplit, applyAnswer, searchPath, linearCount,
     buildDecisionTree, buildMatchTree, matchCount, treeDepth, halvingChain,
-    MONTH_DAYS, DAYS_IN_YEAR, dayToDate, dateToDay, dayLabel,
+    MONTH_DAYS, DAYS_IN_YEAR, dayToDate, dateToDay, dayLabel, rectDays,
     binarySearchSteps, humanDuration, formatNum,
   };
   global.BS = api;

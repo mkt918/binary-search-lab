@@ -224,6 +224,7 @@ table.log tr.is-max td { background: var(--color-accent-wash); }
 .cal__d.is-out { background: var(--color-out); color: var(--color-out-ink); }
 .cal__d.is-sel { background: var(--color-accent-2); color: var(--color-accent-2-ink); outline: 2px solid var(--color-accent-2-deep); outline-offset: 1px; z-index: 1; }
 .cal__d.is-answer { background: var(--color-accent-3); color: var(--color-accent-3-ink); }
+.cal--rect, .cal--rect .cal__d { touch-action: none; } /* 四角モードは縦のドラッグを選択に使う */
 .cal__d:hover { transform: scale(1.12); }
 .cal__d--none { visibility: hidden; pointer-events: none; }
 .cal-legend { display: flex; flex-wrap: wrap; gap: var(--space-sm); font-size: var(--text-xs); color: var(--color-ink-2); margin-top: var(--space-2xs); }

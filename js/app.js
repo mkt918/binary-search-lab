@@ -84,6 +84,17 @@
       st.selKind = 'range';
       render();
     }
+    // 四角（縦）モード：月×日の長方形で選ぶ（例：全部の月の1〜5日）
+    let rectMode = false;
+    function setRectSelection(a, b) {
+      if (st.over) return;
+      const p = BS.dayToDate(a), q = BS.dayToDate(b);
+      st.sel = new Set(BS.rectDays(p.m, p.d, q.m, q.d));
+      st.selKind = 'rect';
+      st.rect = { m1: Math.min(p.m, q.m), m2: Math.max(p.m, q.m), d1: Math.min(p.d, q.d), d2: Math.max(p.d, q.d) };
+      render();
+    }
+    const setSelection = (a, b) => (rectMode ? setRectSelection(a, b) : setRangeSelection(a, b));
     function selectParity(parity) {
       if (st.over) return;
       st.sel = new Set();
@@ -100,14 +111,22 @@
       if (!el) return;
       dragAnchor = +el.dataset.day;
       dragging = true;
-      setRangeSelection(dragAnchor, dragAnchor);
+      setSelection(dragAnchor, dragAnchor);
     });
     window.addEventListener('pointermove', e => {
       if (!dragging) return;
       const el = cellAtPoint(e.clientX, e.clientY);
-      if (el) setRangeSelection(dragAnchor, +el.dataset.day);
+      if (el) setSelection(dragAnchor, +el.dataset.day);
     });
     window.addEventListener('pointerup', () => { dragging = false; });
+    window.addEventListener('pointercancel', () => { dragging = false; });
+    document.querySelectorAll('[data-bmode]').forEach(btn => btn.addEventListener('click', () => {
+      rectMode = btn.dataset.bmode === 'rect';
+      setPressed('[data-bmode]', 'bmode', rectMode ? 'rect' : 'range');
+      cal.classList.toggle('cal--rect', rectMode);
+      $('bCalWrap').classList.toggle('cal--rect', rectMode);
+      clearSelection();
+    }));
 
     function remainingCount() { let c = 0; for (let i = 0; i < N; i++) if (!st.out[i]) c++; return c; }
     function remainingEnvelope() {
@@ -119,6 +138,10 @@
       const days = [...st.sel].sort((a, b) => a - b);
       if (st.selKind === 'odd') return '奇数の日';
       if (st.selKind === 'even') return '偶数の日';
+      if (st.selKind === 'rect' && days.length > 1) {
+        const r = st.rect;
+        return (r.m1 === r.m2 ? r.m1 + '月' : r.m1 + '〜' + r.m2 + '月') + 'の' + (r.d1 === r.d2 ? r.d1 + '日' : r.d1 + '〜' + r.d2 + '日');
+      }
       if (days.length === 1) return BS.dayLabel(days[0]);
       return BS.dayLabel(days[0]) + '〜' + BS.dayLabel(days[days.length - 1]);
     }

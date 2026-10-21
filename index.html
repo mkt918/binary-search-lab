@@ -86,7 +86,14 @@
 
     <p class="range-big" id="bRange">1月1日 〜 12月31日</p>
 
-    <div class="cal-wrap">
+    <div class="row" style="margin-bottom: var(--space-2xs);">
+      <span class="muted">ドラッグの選び方：</span>
+      <div class="seg" role="group" aria-label="ドラッグの選び方">
+        <button type="button" data-bmode="range" aria-pressed="true">連続（ヨコ）</button>
+        <button type="button" data-bmode="rect" aria-pressed="false">四角（タテ）</button>
+      </div>
+    </div>
+    <div class="cal-wrap" id="bCalWrap">
       <div class="cal" id="bCal" aria-label="カレンダー（タップまたはドラッグで範囲を選ぶ）"></div>
     </div>
     <div class="cal-legend">

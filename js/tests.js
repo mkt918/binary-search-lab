@@ -17,6 +17,11 @@
   eq('箱0〜7 半分戦略は全部3回', [0, 1, 2, 3, 4, 5, 6, 7].map(k => BS.searchPath(0, 7, k, 'half').length), [3, 3, 3, 3, 3, 3, 3, 3]);
   eq('箱0〜7 最初の質問は「3番より後？」', BS.halfSplit(0, 7), 3);
 
+  // 四角（縦）選択
+  eq('rectDays 全月の1〜5日は60日', BS.rectDays(1, 1, 12, 5).length, 60);
+  eq('rectDays 向きが逆でも同じ', BS.rectDays(12, 5, 1, 1), BS.rectDays(1, 1, 12, 5));
+  eq('rectDays 全月の29〜31日は存在する日だけ（29日11+30日11+31日7）', BS.rectDays(1, 29, 12, 31).length, 29);
+
   // 誕生日365日：どの日でも9回以内、最大ちょうど9回
   let maxQ = 0, minQ = 99;
   for (let d = 0; d < 365; d++) {
