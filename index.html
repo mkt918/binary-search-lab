@@ -85,6 +85,17 @@
 
     <p class="range-big" id="bRange">1月1日 〜 12月31日</p>
 
+    <p class="split__verdict" id="bVerdict">カレンダーをタップ、またはドラッグして消したい範囲を選ぼう。</p>
+
+    <div class="row" style="margin: var(--space-xs) 0;">
+      <button class="btn btn--ghost btn--sm" id="bClearSel">選択解除</button>
+      <span class="muted">かんたん選択：</span>
+      <button class="btn btn--ghost btn--sm" id="bSelOdd">奇数の日をすべて選ぶ</button>
+      <button class="btn btn--ghost btn--sm" id="bSelEven">偶数の日をすべて選ぶ</button>
+      <button class="btn btn--ghost btn--sm" id="bSelOddM">奇数月をすべて選ぶ</button>
+      <button class="btn btn--ghost btn--sm" id="bSelEvenM">偶数月をすべて選ぶ</button>
+    </div>
+
     <div class="row" style="margin-bottom: var(--space-2xs);">
       <span class="muted">ドラッグの選び方：</span>
       <div class="seg" role="group" aria-label="ドラッグの選び方">
@@ -100,22 +111,8 @@
       <span style="--c: var(--color-accent-2)">選択中（消す範囲）</span>
       <span style="--c: var(--color-out)">外れた日</span>
     </div>
-  </div>
 
-  <div class="card" id="bAskCard" style="margin-top: var(--space-md);">
-    <h3>候補を消す・宣言する（宣言は1ゲームに1回だけ）</h3>
-    <p class="split__verdict" id="bVerdict">カレンダーをタップ、またはドラッグして消したい範囲を選ぼう。</p>
-
-    <div class="row" style="margin-top: var(--space-sm);">
-      <button class="btn btn--ghost btn--sm" id="bClearSel">選択解除</button>
-      <span class="muted">かんたん選択：</span>
-      <button class="btn btn--ghost btn--sm" id="bSelOdd">奇数の日をすべて選ぶ</button>
-      <button class="btn btn--ghost btn--sm" id="bSelEven">偶数の日をすべて選ぶ</button>
-      <button class="btn btn--ghost btn--sm" id="bSelOddM">奇数月をすべて選ぶ</button>
-      <button class="btn btn--ghost btn--sm" id="bSelEvenM">偶数月をすべて選ぶ</button>
-    </div>
-
-    <p class="muted" id="bDeclareHint" style="margin-top: var(--space-sm);">候補が1つになったら宣言しよう。まだ候補が多いうちに宣言するのは運まかせ！</p>
+    <p class="muted" id="bDeclareHint" style="margin-top: var(--space-sm);">候補が1つになったら宣言しよう。まだ候補が多いうちに宣言するのは運まかせ！（宣言は1ゲームに1回だけ）</p>
     <div class="row hide" style="margin-top: var(--space-sm);" id="bJudge">
       <span class="muted">出題者：当たっていますか？</span>
       <button class="btn btn--sm" id="bHit">当たり</button>
