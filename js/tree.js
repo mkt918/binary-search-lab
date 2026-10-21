@@ -137,12 +137,15 @@
       let g;
       if (n.depth === level && n.kind === 'q') {
         g = el('g', { class: 't-node t-range' });
-        g.appendChild(el('rect', { x: x - 42, y: y - 20, width: 84, height: 40, rx: 10 }));
-        g.appendChild(el('text', { x, y: y - 3, 'text-anchor': 'middle' }, n.lo + '〜' + n.hi + terms.rangeSuffix));
+        const rangeText = n.lo + '〜' + n.hi + terms.rangeSuffix;
+        const rw = Math.max(84, rangeText.length * 12 + 16); // 3桁の番号でも枠からはみ出さない
+        g.appendChild(el('rect', { x: x - rw / 2, y: y - 20, width: rw, height: 40, rx: 10 }));
+        g.appendChild(el('text', { x, y: y - 3, 'text-anchor': 'middle' }, rangeText));
         g.appendChild(el('text', { x, y: y + 13, 'text-anchor': 'middle' }, (n.hi - n.lo + 1) + terms.countUnit));
       } else if (n.kind === 'q') {
         g = el('g', { class: 't-node t-q' + (path ? ' is-path' : '') });
-        g.appendChild(el('rect', { x: x - 48, y: y - 17, width: 96, height: 34, rx: 17 }));
+        const qw = Math.max(96, n.label.length * 13 + 14);
+        g.appendChild(el('rect', { x: x - qw / 2, y: y - 17, width: qw, height: 34, rx: 17 }));
         g.appendChild(el('text', { x, y: y + 5, 'text-anchor': 'middle' }, n.label));
       } else if (n.kind === 'leaf') {
         g = el('g', { class: 't-node t-leaf' + (path ? ' is-path' : ''), tabindex: 0, role: 'button', 'aria-label': n.label + 'への道すじ' });

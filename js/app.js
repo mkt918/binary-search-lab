@@ -593,15 +593,17 @@
       keySel.value = st.key == null ? '' : st.key;
     }
     const MAX = 16; // 常に16枠を横1列で表示し、n個目までを色付け・残りは灰色にする。タップでそこまでの個数を選べる
+    const BIG_NS = [100, 365]; // 16を超える個数は専用ボタンで選ぶ（箱は全部色付き）
     function renderNBoxes() {
       nBoxes.replaceChildren();
       for (let i = 0; i < MAX; i++) {
         const b = h('button', { type: 'button', class: 'box' + (i >= st.n ? ' is-out' : ''), 'aria-label': (i + 1) + '個にする', onclick: () => setN(i + 1) }, String(i));
         nBoxes.append(b);
       }
+      BIG_NS.forEach(v => nBoxes.append(h('button', { type: 'button', class: 'btn btn--sm tn-big', 'aria-pressed': String(st.n === v), onclick: () => setN(v) }, v + '個')));
     }
     function setN(n) {
-      n = Math.max(2, Math.min(MAX, n));
+      n = Math.max(2, n > MAX && !BIG_NS.includes(n) ? MAX : n); // 17〜99など中途半端な個数にはしない
       st.n = n;
       if (st.key != null && st.key >= st.n) st.key = null;
       st.level = 0;
@@ -617,7 +619,7 @@
         onPick: v => { st.key = st.key === v ? null : v; keySel.value = st.key == null ? '' : st.key; render(); },
       });
       $('tNMinus').disabled = st.n <= 2;
-      $('tNPlus').disabled = st.n >= MAX;
+      $('tNPlus').disabled = st.n >= MAX; // 16を超える個数は専用ボタンで
       $('tNLabel').textContent = st.n;
       $('tCountLabel').textContent = '箱の数';
       $('tCountUnit').textContent = '個';
@@ -632,7 +634,7 @@
         ? '半分ずつ：' + chain + '。どの箱でも最大 ' + depth + ' 回。分かれ道の数はいつも「箱の数−1」（トーナメントの試合数と同じ）。' + (st.key != null ? '　' + st.key + '番への道すじは ' + BS.searchPath(0, st.n - 1, st.key, 'half').length + ' 回。' : '　箱（葉）をタップすると、そこへの道すじが光ります。')
         : '端から聞くと、木が片側にのびて高くなります。運が悪いと ' + depth + ' 回。これは線形探索と同じ考え方です。';
     }
-    $('tNMinus').addEventListener('click', () => setN(st.n - 1));
+    $('tNMinus').addEventListener('click', () => setN(st.n > MAX ? MAX : st.n - 1));
     $('tNPlus').addEventListener('click', () => setN(st.n + 1));
     document.querySelectorAll('[data-tstrat]').forEach(b => b.addEventListener('click', () => { st.strat = b.dataset.tstrat; setPressed('[data-tstrat]', 'tstrat', st.strat); st.level = 0; render(); }));
     keySel.addEventListener('change', () => { st.key = keySel.value === '' ? null : +keySel.value; render(); });
