@@ -337,7 +337,6 @@
       if (isBig()) return;
       for (let i = 0; i < st.n; i++) {
         const b = h('button', { type: 'button', class: 'box', 'aria-label': i + '番の箱' }, String(i));
-        b.addEventListener('click', () => { if (!st.over) { st.sel = i; render(); } });
         boxEls.push(b); wrap.append(b);
       }
       // 右側の範囲をくくる枠（2行目に置く）
@@ -350,13 +349,12 @@
       const q = BS.halfSplit(st.lo, st.hi);
       st.hist.push({ lo: st.lo, hi: st.hi, q, isAfter });
       Object.assign(st, BS.applyAnswer(st.lo, st.hi, q, isAfter));
-      if (st.lo === st.hi) st.sel = st.lo;
-      render();
+      if (st.lo === st.hi) finish(); // 1個にしぼれた時点で「見つけた」
+      else render();
     }
-    function declare() {
-      if (st.sel == null || st.over) return;
-      const hit = st.sel === st.key;
-      st.over = { hit, pick: st.sel };
+    function finish() {
+      const hit = st.lo === st.key;
+      st.over = { hit, pick: st.lo };
       st.table[st.n][st.key] = hit ? st.hist.length : '失敗';
       shared.lastBox = { n: st.n, key: st.key };
       render();
@@ -402,17 +400,13 @@
         $('xStripKey').textContent = '🔑 鍵は ' + st.key + '番にあります';
       }
 
-      const sel = st.sel;
       const verdict = $('xVerdict');
       verdict.replaceChildren();
       if (!st.over) {
-        if (count === 1) verdict.append('候補は1つ。宣言しよう！');
-        else verdict.append('鍵は ', h('b', { class: 'ask-range', text: rightLabel }), ' の中にありますか？　', h('span', { class: 'muted', text: '(mid > ' + q + ')' }));
+        verdict.append('鍵は ', h('b', { class: 'ask-range', text: rightLabel }), ' の中にありますか？　', h('span', { class: 'muted', text: '(mid > ' + q + ')' }));
       }
       $('xYes').disabled = !!st.over || count === 1;
       $('xNo').disabled = !!st.over || count === 1;
-      $('xDeclare').disabled = sel == null || !!st.over;
-      $('xDeclare').textContent = sel == null ? 'この箱だと宣言' : sel + '番だと宣言';
 
       const res = $('xResult');
       res.replaceChildren();
@@ -465,7 +459,6 @@
     keySel.addEventListener('change', newGame);
     $('xYes').addEventListener('click', () => answer(true));
     $('xNo').addEventListener('click', () => answer(false));
-    $('xDeclare').addEventListener('click', declare);
     $('xClearTable').addEventListener('click', () => { st.table[st.n] = {}; renderTable(); });
     $('xToTree').addEventListener('click', () => { shared.toTree = { n: st.n, key: st.over ? st.key : null }; });
     fillKeySel();
